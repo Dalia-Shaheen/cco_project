@@ -34,3 +34,43 @@ body {
 html[lang="ar"] .font-poppins {
   font-family: var(--cairo), ui-sans-serif, system-ui, sans-serif;
 }
+
+/* Hero decorations. Deliberately slow and small: our audience is sensory-
+   sensitive, so this is a breath, not a bounce. */
+@keyframes lobly-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes lobly-twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.lobly-float {
+  animation: lobly-float 6s ease-in-out infinite;
+}
+
+.lobly-twinkle {
+  animation: lobly-twinkle 5s ease-in-out infinite;
+}
+
+/* Honour the OS setting: no drifting mascot, no pulsing stars. */
+@media (prefers-reduced-motion: reduce) {
+  .lobly-float,
+  .lobly-twinkle {
+    animation: none !important;
+  }
+}

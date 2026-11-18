@@ -6,6 +6,7 @@ import {
   revealScreen,
 } from "@/lib/locale-transition";
 import { useRollingMenu } from "@/components/mfa/RollingLettersMenu";
+import FlairHover from "@/components/ui/FlairHover";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type MouseEvent } from "react";
@@ -18,8 +19,17 @@ import { useEffect, type MouseEvent } from "react";
 export default function Navbar({ locale }: { locale: "en" | "ar" }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { open, toggle, registerTrigger } = useRollingMenu();
+  const { open, panelVisible, toggle, registerTrigger } = useRollingMenu();
   const fontClass = locale === "ar" ? "font-cairo" : "font-poppins";
+  // The panel keeps `panelVisible` true until its closing circle has collapsed.
+  // Hiding the bar's own content for that whole window keeps a white bar and the
+  // wordmark from popping in over the panel on the way out.
+  const covered = panelVisible;
+  // …and when the circle is finally gone, the content fades back instead of
+  // snapping in — the snap is what felt wrong on phones.
+  const chromeFade = covered
+    ? "pointer-events-none opacity-0"
+    : "opacity-100";
 
   // Toggle between English and Arabic URLs
   const toggleLocale = locale === "en" ? "ar" : "en";
@@ -44,21 +54,20 @@ export default function Navbar({ locale }: { locale: "en" | "ar" }) {
   return (
     <nav
       dir="ltr"
-      className={`absolute top-[12px] left-1/2 z-[110] flex h-[68px] w-[min(1392px,calc(100%-1.5rem))] -translate-x-1/2 flex-row items-center gap-1 rounded-2xl px-2.5 transition-colors sm:top-[16px] sm:h-[80px] sm:w-[min(1392px,calc(100%-2rem))] sm:gap-4 sm:px-6 ${
-        open ? "pointer-events-none bg-transparent" : "bg-white"
+      className={`absolute top-[12px] left-1/2 z-[110] flex h-[68px] w-[min(1392px,calc(100%-1.5rem))] -translate-x-1/2 flex-row items-center gap-2 rounded-[34px] px-2.5 transition-colors duration-300 max-[359px]:gap-1 max-[359px]:px-2 sm:top-[16px] sm:h-[80px] sm:w-[min(1392px,calc(100%-2rem))] sm:gap-4 sm:rounded-[40px] sm:px-6 ${
+        covered ? "pointer-events-none bg-transparent" : "bg-white"
       }`}
     >
       {/* Brand: Lobly */}
       <Link
         href={`/${locale}`}
         dir="ltr"
+        inert={covered}
         style={{
           fontFamily:
             "var(--poppins), var(--cairo), ui-sans-serif, system-ui, sans-serif",
         }}
-        className={`flex-none text-[18px] leading-[26px] font-bold text-[#563396] transition-opacity sm:text-[24px] sm:leading-[35px] lg:text-[28px] ${
-          open ? "invisible" : ""
-        }`}
+        className={`flex-none text-[18px] leading-[26px] font-bold text-[#563396] transition-opacity duration-300 ease-out sm:text-[24px] sm:leading-[35px] lg:text-[28px] ${chromeFade}`}
       >
         Lobly
       </Link>
@@ -68,61 +77,66 @@ export default function Navbar({ locale }: { locale: "en" | "ar" }) {
 
       {/* Right-hand group: language + login + the menu trigger itself. When the
           panel is open the first two step aside so only the trigger stays. */}
-      <div className="ms-auto flex flex-none items-center gap-1 sm:gap-4">
-        {/* Language: one compact toggle on phones, the full EN/عربي switch above `sm`. */}
+      <div className="ms-auto flex flex-none items-center gap-2 max-[359px]:gap-1 sm:gap-4">
+        {/* Language: one compact toggle on phones (the full word, not a letter),
+            the full EN/عربي switch above `sm`. */}
         <Link
           href={switchUrl}
           onClick={handleLocaleSwitch(toggleLocale)}
+          inert={covered}
           aria-label={
             locale === "en" ? "Switch to Arabic" : "التبديل إلى الإنجليزية"
           }
-          className={`flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-[#EEE8F8] text-[15px] font-bold text-[#563396] outline-offset-2 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-[#6441A4] sm:hidden ${
-            open ? "invisible" : ""
-          } ${toggleLocale === "ar" ? "font-cairo" : "font-poppins"}`}
+          className={`relative flex h-12 min-w-[52px] flex-none items-center justify-center rounded-full bg-[#EEE8F8] px-1.5 text-[15px] font-bold text-[#30214F] outline-offset-2 transition-[opacity,background-color] duration-300 ease-out motion-reduce:hover:bg-white focus-visible:outline-2 focus-visible:outline-[#6441A4] max-[359px]:min-w-[46px] max-[359px]:px-1 sm:hidden ${chromeFade} ${locale === "en" ? "font-cairo" : "font-poppins"}`}
         >
-          {toggleLocale === "ar" ? "ع" : "EN"}
+          <FlairHover color="#FFFFFF" />
+          <span className="relative">{locale === "en" ? "عربي" : "EN"}</span>
         </Link>
 
         {/* Language Switcher (EN / عربي) — h-14 + p-1 so the 48px pills are not clipped */}
         <div
-          className={`hidden h-14 w-[168px] flex-none flex-row items-center overflow-hidden rounded-2xl bg-[#EEE8F8] p-1 sm:flex ${
-            open ? "invisible" : ""
-          }`}
+          inert={covered}
+          className={`hidden h-14 w-[168px] flex-none flex-row items-center overflow-hidden rounded-full bg-[#EEE8F8] p-1 transition-opacity duration-300 ease-out sm:flex ${chromeFade}`}
         >
           <Link
             href={locale === "en" ? "#" : switchUrl}
             onClick={handleLocaleSwitch("en")}
             aria-current={locale === "en" ? "true" : undefined}
-            className={`flex h-12 w-[84px] flex-row items-center justify-center rounded-2xl px-4 text-center ${fontClass} text-[20px] font-bold outline-offset-2 focus-visible:outline-2 focus-visible:outline-[#6441A4] ${
+            className={`relative flex h-12 w-[84px] flex-row items-center justify-center rounded-full px-4 text-center ${fontClass} text-[20px] font-bold outline-offset-2 focus-visible:outline-2 focus-visible:outline-[#6441A4] ${
               locale === "en"
                 ? "bg-[#6441A4] text-white"
-                : "bg-transparent text-[#30214F] transition-colors hover:bg-white/50"
+                : "bg-transparent text-[#30214F] transition-colors motion-reduce:hover:bg-white/50"
             }`}
           >
-            EN
+            {locale !== "en" && <FlairHover color="#FFFFFF" />}
+            <span className="relative">EN</span>
           </Link>
           <Link
             href={locale === "ar" ? "#" : switchUrl}
             onClick={handleLocaleSwitch("ar")}
             aria-current={locale === "ar" ? "true" : undefined}
-            className={`flex h-12 w-[84px] flex-row items-center justify-center rounded-2xl px-4 text-center font-cairo text-[20px] font-bold outline-offset-2 focus-visible:outline-2 focus-visible:outline-[#6441A4] ${
+            className={`relative flex h-12 w-[84px] flex-row items-center justify-center rounded-full px-4 text-center font-cairo text-[20px] font-bold outline-offset-2 focus-visible:outline-2 focus-visible:outline-[#6441A4] ${
               locale === "ar"
                 ? "bg-[#6441A4] text-white"
-                : "bg-transparent text-[#30214F] transition-colors hover:bg-white/50"
+                : "bg-transparent text-[#30214F] transition-colors motion-reduce:hover:bg-white/50"
             }`}
           >
-            عربي
+            {locale !== "ar" && <FlairHover color="#FFFFFF" />}
+            <span className="relative">عربي</span>
           </Link>
         </div>
 
-        {/* Login Button — the primary CTA */}
+        {/* Login Button — the primary CTA. Same width as the menu trigger so
+            the two read as one row instead of the menu out-weighing Login. */}
         <Link
           href={`/${locale}/login`}
-          className={`flex h-12 w-[64px] flex-none flex-row items-center justify-center rounded-2xl bg-[#6441A4] px-1 text-center ${fontClass} text-[16px] font-bold text-white outline-offset-2 transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-[#6441A4] sm:w-[112px] sm:px-4 sm:text-[20px] ${
-            open ? "invisible" : ""
-          }`}
+          inert={covered}
+          className={`group relative flex h-12 min-w-[84px] flex-none flex-row items-center justify-center rounded-full bg-[#6441A4] px-3 text-center ${fontClass} text-[16px] font-bold text-white outline-offset-2 transition-opacity duration-300 ease-out motion-reduce:hover:opacity-90 focus-visible:outline-2 focus-visible:outline-[#6441A4] max-[359px]:min-w-[64px] max-[359px]:px-2 sm:min-w-[112px] sm:px-4 sm:text-[20px] ${chromeFade}`}
         >
-          {locale === "en" ? "Login" : "دخول"}
+          <FlairHover color="#FFFFFF" />
+          <span className="relative transition-colors duration-75 motion-safe:group-hover:text-[#563396] motion-safe:group-hover:delay-100">
+            {locale === "en" ? "Login" : "دخول"}
+          </span>
         </Link>
 
         {/* The menu trigger lives here, inside the bar. Secondary by design so
@@ -142,9 +156,13 @@ export default function Navbar({ locale }: { locale: "en" | "ar" }) {
                 : "القائمة"
           }
           onClick={toggle}
-          className={`pointer-events-auto flex h-12 w-[84px] flex-none cursor-pointer select-none items-center justify-center gap-1 rounded-2xl bg-[#EEE8F8] px-1.5 text-[16px] font-bold text-[#563396] outline-offset-2 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-[#6441A4] sm:w-[112px] sm:gap-1.5 sm:px-3 sm:text-[20px] ${fontClass}`}
+          className={`pointer-events-auto relative flex h-12 min-w-[84px] flex-none cursor-pointer select-none items-center justify-center gap-1 rounded-full bg-[#EEE8F8] px-2 text-[16px] font-bold text-[#563396] outline-offset-2 transition-colors motion-reduce:hover:bg-white focus-visible:outline-2 focus-visible:outline-[#6441A4] sm:min-w-[112px] sm:gap-1.5 sm:px-3 sm:text-[20px] ${fontClass} ${
+
+            locale === "ar" ? "flex-row-reverse" : ""
+          }`}
         >
-          <span aria-hidden className="flex h-3 w-3.5 flex-col justify-between sm:h-3.5 sm:w-4">
+          <FlairHover color="#FFFFFF" />
+          <span aria-hidden className="relative flex h-3 w-3.5 flex-col justify-between sm:h-3.5 sm:w-4">
             <span
               className={`h-[2px] w-full rounded-full bg-[#563396] transition-transform ${
                 open ? "translate-y-[5px] rotate-45 sm:translate-y-[6px]" : ""
@@ -161,7 +179,7 @@ export default function Navbar({ locale }: { locale: "en" | "ar" }) {
               }`}
             />
           </span>
-          <span>
+          <span className="relative">
             {open
               ? locale === "en"
                 ? "Close"

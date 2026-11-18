@@ -21,6 +21,12 @@ gsap.registerPlugin(useGSAP)
 /** Lets a host (e.g. your navbar) render the trigger itself and drive the menu. */
 export type RollingMenuApi = {
   open: boolean
+  /**
+   * The panel is on screen — true while opening, open, *and* still shrinking
+   * shut. Hosts use it to keep their chrome hidden until the panel is really
+   * gone, so a white bar never pops in over the closing circle.
+   */
+  panelVisible: boolean
   toggle: () => void
   close: () => void
   /** attach to your own trigger button so the reveal grows from it */
@@ -89,6 +95,8 @@ export type RollingLettersMenuProps = {
    * button drives the menu via `useRollingMenu()`.
    */
   header?: ReactNode
+  /** the item matching the current page gets `aria-current="page"` */
+  activeHref?: string
 }
 
 // Muted tones at much the same depth (moss, clay, indigo, ochre, plum) under one
@@ -166,8 +174,13 @@ export default function RollingLettersMenu({
   triggerInk = '#ffffff',
   triggerLabels = {open: 'Menu', close: 'Close'},
   header,
+  activeHref,
 }: RollingLettersMenuProps) {
   const [open, setOpen] = useState(defaultOpen)
+  // `open` flips the moment the trigger is pressed; `panelVisible` stays true
+  // until the closing circle has fully collapsed, so hosts can keep their chrome
+  // hidden for the whole exit.
+  const [panelVisible, setPanelVisible] = useState(defaultOpen)
   const panelRef = useRef<HTMLDivElement>(null)
   const internalButtonRef = useRef<HTMLButtonElement>(null)
   const externalButtonRef = useRef<HTMLButtonElement>(null)
@@ -187,6 +200,15 @@ export default function RollingLettersMenu({
   const lineRefs = useRef<(HTMLLIElement | null)[]>([])
   const noteRefs = useRef<(HTMLParagraphElement | null)[]>([])
   const opened = useRef(false)
+  // GSAP callbacks run outside React, so they read the live value from here.
+  const openRef = useRef(open)
+  openRef.current = open
+  // Fires just before the closing circle is gone, so the bar's chrome fades back
+  // in *with* the tail of the exit instead of waiting for it to finish.
+  const chromeBack = useRef<gsap.core.Tween | null>(null)
+  // True while we move focus to the first link ourselves. Opening the menu must
+  // not "hover" item 1 (that dims every other link and repaints the panel).
+  const suppressFocusRoll = useRef(false)
   const look = useRef({background, ink, dim, duration, stagger, order})
 
   useEffect(() => {
@@ -234,17 +256,23 @@ export default function RollingLettersMenu({
       const reduced = still()
       const all = itemWheels.current.slice(0, items.length)
 
-      gsap.set(panel, {backgroundColor: look.current.background, '--ink': look.current.ink})
-      gsap.set(noteRefs.current, {autoAlpha: 0})
+      // A reopen can interrupt a close mid-flight. Killing the old tween first
+      // stops the two clip-paths fighting — and, more importantly, stops the
+      // close's onComplete from hiding a panel that has just been reopened.
+      gsap.killTweensOf(panel)
+      chromeBack.current?.kill()
+      chromeBack.current = null
+
       if (reduced) gsap.set(buttonWheels.current, {rotationX: open ? 90 : 0})
       else roll(buttonWheels.current, open ? 90 : 0)
 
       if (!open && !opened.current) {
-        gsap.set(panel, {autoAlpha: 0})
+        gsap.set(panel, {autoAlpha: 0, backgroundColor: look.current.background, '--ink': look.current.ink})
         return
       }
       if (reduced) {
         gsap.to(panel, {autoAlpha: open ? 1 : 0, duration: 0.2})
+        setPanelVisible(open)
         opened.current = open
         return
       }
@@ -258,8 +286,13 @@ export default function RollingLettersMenu({
       const circle = (r: number) => `circle(${r}px at ${x}px ${y}px)`
 
       if (open) {
-        gsap.set(panel, {autoAlpha: 1})
+        setPanelVisible(true)
+        // Every open starts from the neutral palette: whatever was active when
+        // the menu last closed is gone, and all links are back at full strength.
+        gsap.set(panel, {backgroundColor: look.current.background, '--ink': look.current.ink})
         gsap.set(lineRefs.current, {opacity: 1})
+        gsap.set(noteRefs.current, {autoAlpha: 0})
+        gsap.set(panel, {autoAlpha: 1})
         gsap.fromTo(panel, {clipPath: circle(0)}, {clipPath: circle(reach), duration: openSpeed, ease: 'expo.inOut'})
         all.forEach((wheels, i) => {
           gsap.fromTo(
@@ -269,8 +302,28 @@ export default function RollingLettersMenu({
           )
         })
       } else {
-        setActive(null)
-        gsap.to(panel, {clipPath: circle(0), duration: openSpeed * 0.7, ease: 'expo.inOut', onComplete: () => void gsap.set(panel, {autoAlpha: 0})})
+        // Keep the current colour and dim while the circle shrinks — resetting
+        // the palette here made the panel flash pale on its way out.
+        const exit = openSpeed * 0.7
+        chromeBack.current = gsap.delayedCall(exit * 0.72, () => setPanelVisible(false))
+        gsap.to(panel, {
+          clipPath: circle(0),
+          duration: exit,
+          ease: 'expo.inOut',
+          onComplete: () => {
+            if (openRef.current) return
+            // Reset silently behind the hidden panel so the next open is clean.
+            gsap.set(panel, {
+              autoAlpha: 0,
+              backgroundColor: look.current.background,
+              '--ink': look.current.ink,
+            })
+            gsap.set(lineRefs.current, {opacity: 1})
+            gsap.set(noteRefs.current, {autoAlpha: 0})
+            all.forEach((wheels) => gsap.set(wheels, {rotationX: 0}))
+            setPanelVisible(false)
+          },
+        })
       }
       opened.current = open
     },
@@ -280,7 +333,13 @@ export default function RollingLettersMenu({
   // Esc closes, the first link takes focus on opening, and it goes back on closing.
   const wasOpen = useRef(defaultOpen)
   useEffect(() => {
-    if (open && !wasOpen.current) firstLinkRef.current?.focus({preventScroll: true})
+    if (open && !wasOpen.current) {
+      // Focus without activating: opening the menu should look neutral, not as
+      // if item 1 were already hovered.
+      suppressFocusRoll.current = true
+      firstLinkRef.current?.focus({preventScroll: true})
+      suppressFocusRoll.current = false
+    }
     if (!open && wasOpen.current) triggerRef()?.focus({preventScroll: true})
     wasOpen.current = open
     if (!open) return
@@ -306,11 +365,12 @@ export default function RollingLettersMenu({
   const api = useMemo<RollingMenuApi>(
     () => ({
       open,
+      panelVisible,
       toggle: () => setOpen((o) => !o),
       close: () => setOpen(false),
       registerTrigger,
     }),
-    [open, registerTrigger],
+    [open, panelVisible, registerTrigger],
   )
 
   const menu = (
@@ -328,46 +388,57 @@ export default function RollingLettersMenu({
         <div className="h-[clamp(64px,12cqh,96px)] shrink-0 px-[clamp(18px,3.5cqw,44px)] pt-[clamp(18px,3.5cqw,32px)] text-[clamp(15px,1.8cqw,20px)]">{brand}</div>
         <nav aria-label="Main" className="flex min-h-0 flex-1 items-center justify-between gap-8 px-[clamp(18px,3.5cqw,44px)]">
           <ul className="m-0 list-none p-0">
-            {items.map((item, i) => (
-              <li
-                key={item.href}
-                ref={(el) => {
-                  lineRefs.current[i] = el
-                }}
-                className="flex items-start gap-[0.4em] text-[clamp(44px,min(14cqw,15.5cqh),190px)] leading-[1.06] @[640px]:text-[clamp(44px,min(12cqw,15.5cqh),190px)]"
-              >
-                <span aria-hidden className="pt-[0.5em] text-[clamp(11px,1.2cqw,14px)] leading-none tabular-nums opacity-80">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <a
-                  ref={i === 0 ? firstLinkRef : undefined}
-                  href={item.href}
-                  aria-label={item.label}
-                  onPointerEnter={(e) => {
-                    if (e.pointerType === 'mouse') enter(i)
+            {items.map((item, i) => {
+              const isActive = item.href === activeHref
+              return (
+                <li
+                  key={item.href}
+                  ref={(el) => {
+                    lineRefs.current[i] = el
                   }}
-                  onPointerLeave={(e) => {
-                    if (e.pointerType === 'mouse') leave(i)
-                  }}
-                  onFocus={() => enter(i)}
-                  onBlur={() => leave(i)}
-                  onClick={(e) => {
-                    onNavigate?.(item, e)
-                    setOpen(false)
-                  }}
-                  className="block uppercase no-underline outline-offset-4 focus-visible:outline-2 focus-visible:outline-current"
-                  style={{color: 'inherit'}}
+                  className="flex items-start gap-[0.4em] text-[clamp(26px,min(10.8cqw,15.5cqh),190px)] leading-[1.06] [@media(max-height:560px)]:leading-none"
                 >
-                  <RollWord
-                    text={item.label}
-                    wheels={(el) => {
-                      itemWheels.current[i] ??= []
-                      if (el && !itemWheels.current[i].includes(el)) itemWheels.current[i].push(el)
+                  <span
+                    aria-hidden
+                    className="pt-[0.5em] text-[clamp(12px,1.5cqw,16px)] leading-none font-semibold tabular-nums"
+                  >
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <a
+                    ref={i === 0 ? firstLinkRef : undefined}
+                    href={item.href}
+                    aria-label={item.label}
+                    aria-current={isActive ? 'page' : undefined}
+                    onPointerEnter={(e) => {
+                      if (e.pointerType === 'mouse') enter(i)
                     }}
-                  />
-                </a>
-              </li>
-            ))}
+                    onPointerLeave={(e) => {
+                      if (e.pointerType === 'mouse') leave(i)
+                    }}
+                    onFocus={() => {
+                      if (!suppressFocusRoll.current) enter(i)
+                    }}
+                    onBlur={() => leave(i)}
+                    onClick={(e) => {
+                      onNavigate?.(item, e)
+                      setOpen(false)
+                    }}
+                    // min-h-12 keeps every row a 48px touch target even on a
+                    // small phone, where the word itself is only ~37px tall.
+                    className="relative flex min-h-12 items-center uppercase no-underline outline-offset-4 focus-visible:outline-2 focus-visible:outline-current"
+                    style={{color: 'inherit'}}
+                  >
+                    <RollWord
+                      text={item.label}
+                      wheels={(el) => {
+                        itemWheels.current[i] ??= []
+                        if (el && !itemWheels.current[i].includes(el)) itemWheels.current[i].push(el)
+                      }}
+                    />
+                  </a>
+                </li>
+              )
+            })}
           </ul>
           <div className="relative hidden h-full max-w-[340px] min-w-0 flex-1 text-[clamp(17px,2.1cqw,28px)] leading-tight @[640px]:block">
             {items.map((item, i) => (

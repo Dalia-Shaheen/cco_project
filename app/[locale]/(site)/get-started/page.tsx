@@ -1,6 +1,7 @@
 import { isLocale } from "@/lib/i18n";
 import { buildMetadata } from "@/lib/seo";
 import { siteCopy } from "@/lib/site-copy";
+import FlairHover from "@/components/ui/FlairHover";
 import { ArrowRight, Check } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -62,9 +63,12 @@ export default async function GetStartedPage({ params }: GetStartedProps) {
         <Check className="mx-auto size-8 text-[#6441A4]" aria-hidden="true" />
         <Link
           href={`/${locale}/login`}
-          className="mt-5 inline-flex min-h-12 items-center rounded-2xl bg-[#6441A4] px-7 text-sm font-bold text-white shadow-card transition hover:bg-[#563396]"
+          className="group relative mt-5 inline-flex min-h-12 items-center rounded-2xl bg-[#6441A4] px-7 text-sm font-bold text-white shadow-card outline-offset-2 focus-visible:outline-2 focus-visible:outline-[#6441A4] motion-reduce:hover:bg-[#563396]"
         >
-          {t.cta}
+          <FlairHover color="#FFFFFF" />
+          <span className="relative transition-colors duration-75 motion-safe:group-hover:text-[#563396] motion-safe:group-hover:delay-100">
+            {t.cta}
+          </span>
         </Link>
       </div>
     </main>

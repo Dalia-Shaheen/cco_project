@@ -1,6 +1,7 @@
 import { isLocale } from "@/lib/i18n";
 import { buildMetadata } from "@/lib/seo";
 import { siteCopy } from "@/lib/site-copy";
+import FlairHover from "@/components/ui/FlairHover";
 import { LockKeyhole } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -65,9 +66,12 @@ export default async function LoginPage({ params }: LoginProps) {
           </div>
           <button
             type="button"
-            className="h-12 w-full cursor-pointer rounded-2xl bg-[#6441A4] text-sm font-bold text-white shadow-card transition hover:bg-[#563396]"
+            className="group relative h-12 w-full cursor-pointer rounded-2xl bg-[#6441A4] text-sm font-bold text-white shadow-card outline-offset-2 focus-visible:outline-2 focus-visible:outline-[#6441A4] motion-reduce:hover:bg-[#563396]"
           >
-            {t.submit}
+            <FlairHover color="#FFFFFF" />
+            <span className="relative transition-colors duration-75 motion-safe:group-hover:text-[#563396] motion-safe:group-hover:delay-100">
+              {t.submit}
+            </span>
           </button>
         </form>
 

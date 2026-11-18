@@ -3,7 +3,7 @@
 import RollingLettersMenu, {
   type RollingMenuItem,
 } from "@/components/mfa/RollingLettersMenu";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { MouseEvent, ReactNode } from "react";
 import Navbar from "@/components/Navbar";
 
@@ -20,6 +20,7 @@ export default function SiteMenuShell({
   children: ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const dir = locale === "ar" ? "rtl" : "ltr";
 
   const items: RollingMenuItem[] =
@@ -96,11 +97,21 @@ export default function SiteMenuShell({
     }
   };
 
+  // Only real pages can be "current": the in-page anchors (#islands, #help) are
+  // the same page as Home, so marking them would light up two items at once.
+  const activeHref = items.find((item) => {
+    if (item.href.includes("#")) return false;
+    return item.href === `/${locale}`
+      ? pathname === item.href
+      : pathname.startsWith(item.href);
+  })?.href;
+
   return (
     <RollingLettersMenu
       fixed
       dir={dir}
       items={items}
+      activeHref={activeHref}
       background="#FAF8FF"
       ink="#6441A4"
       brand={
