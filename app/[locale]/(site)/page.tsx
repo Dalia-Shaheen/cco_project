@@ -62,9 +62,9 @@ export default async function HomePage({ params }: HomeProps) {
   const rtl = locale === "ar";
 
   const islands = [
-    { name: dict.islands[0], ...ISLAND_ART[0] },
-    { name: dict.islands[1], ...ISLAND_ART[1] },
-    { name: dict.islands[2], ...ISLAND_ART[2] },
+    { name: dict.islands[0], nickname: dict.islandNames[0], ...ISLAND_ART[0] },
+    { name: dict.islands[1], nickname: dict.islandNames[1], ...ISLAND_ART[1] },
+    { name: dict.islands[2], nickname: dict.islandNames[2], ...ISLAND_ART[2] },
   ];
 
   return (
@@ -147,10 +147,10 @@ export default async function HomePage({ params }: HomeProps) {
                 </Link>
                 <Link
                   href="#how-it-works"
-                  className="group relative flex h-13 min-h-12 w-full items-center justify-center gap-3 rounded-full border border-[#C9BDEB] bg-white py-2 ps-2 pe-7 text-[16px] font-bold text-[#30214F] outline-offset-2 transition-[border-color] duration-200 hover:border-[#6441A4] focus-visible:outline-2 focus-visible:outline-[#6441A4] motion-reduce:transition-none sm:w-auto sm:text-[18px]"
+                  className="group relative flex h-13 min-h-12 w-full items-center justify-center gap-3 rounded-full bg-[#EEE8F8] py-2 ps-2 pe-7 text-[16px] font-bold text-[#30214F] outline-offset-2 transition-colors motion-reduce:hover:bg-white focus-visible:outline-2 focus-visible:outline-[#6441A4] sm:w-auto sm:text-[18px]"
                 >
-                  <FlairHover color="#EEE8F8" />
-                  <span className="relative grid h-9 w-9 flex-none place-items-center rounded-full bg-[#EEE8F8] text-[#6441A4] transition-colors duration-75 motion-safe:group-hover:bg-white motion-safe:group-hover:delay-100">
+                  <FlairHover color="#FFFFFF" />
+                  <span className="relative grid h-9 w-9 flex-none place-items-center rounded-full bg-white text-[#6441A4] transition-colors duration-75 group-hover:bg-[#EEE8F8] group-hover:delay-100">
                     <Play className="h-3.5 w-3.5" fill="currentColor" aria-hidden />
                   </span>
                   <span className="relative">{dict.howItWorks}</span>

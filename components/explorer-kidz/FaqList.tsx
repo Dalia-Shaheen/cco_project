@@ -85,6 +85,10 @@ function FaqRow({ item, index, open, onToggle }: FaqRowProps) {
         style={{ height: initialHeight }}
         className="overflow-hidden"
       >
+        {/* No negative pull here: the panel clips its own box (its height is
+            tweened), so pulling the answer above it shaves the tops of the
+            Arabic dots — Cairo's 15px ink starts only ~3px inside its 23px line
+            box. The open card is 8px taller instead. */}
         <p className="px-6 pb-4 text-[15px] leading-[22px] text-[#746585] lg:pb-[26px] lg:leading-[23px]">
           {item.a}
         </p>

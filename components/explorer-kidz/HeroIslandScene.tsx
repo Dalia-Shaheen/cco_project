@@ -71,33 +71,56 @@ export default function HeroIslandScene({
     <div
       ref={root}
       aria-hidden
-      style={
-        variant === "bleed"
-          ? { WebkitMaskImage: sideFade, maskImage: sideFade }
-          : undefined
-      }
       className={
         variant === "bleed"
-          ? "pointer-events-none absolute inset-y-0 start-1/2 end-[calc((100%-100vw)/2)] hidden h-full overflow-hidden bg-[#F3EFFB] lg:block"
-          : "relative aspect-[4/3] w-full overflow-hidden rounded-[28px] bg-[#F3EFFB] shadow-[0_30px_60px_-30px_rgba(48,33,79,0.35)] sm:aspect-[16/10]"
+          ? // The artwork half starts on the same line as the copy (the grid's
+            // `lg:pt-6`) instead of at the section's edge, so the panel's top
+            // sits 40px under the navbar exactly like the eyebrow does.
+            "pointer-events-none absolute bottom-0 top-6 start-1/2 end-[calc((100%-100vw)/2)] hidden h-auto lg:block"
+          : "relative aspect-[4/3] w-full rounded-[28px] shadow-[0_8px_48px_-6px_rgba(48,33,79,0.26)] sm:aspect-[16/10]"
       }
     >
-      {/* The scene is never mirrored: the characters are drawn in their own
-          composition, and flipping them in Arabic would put the whole group
-          back to front. Only the fade is direction-aware. */}
-      <Image
-        src="/explorer-kidz/landingPage/islandSide.png"
-        alt=""
-        fill
-        priority
-        sizes="(min-width: 1024px) 50vw, 100vw"
-        data-scene-ground
-        className="object-cover object-center will-change-transform"
-      />
+      {variant === "bleed" && (
+        // A `box-shadow` on the frame itself would be painted outside its border
+        // box and then wiped by the frame's own `mask-image`, so the shadow gets
+        // its own unmasked band sitting above the artwork's top edge: darkest
+        // where it meets the art, gone before it reaches the navbar. It carries
+        // the same side fade so it thins out toward the copy like the art does.
+        <span
+          style={{ WebkitMaskImage: sideFade, maskImage: sideFade }}
+          className="pointer-events-none absolute inset-x-0 top-0 h-10 -translate-y-full bg-[linear-gradient(to_top,rgba(48,33,79,0.18),rgba(48,33,79,0.05)_55%,transparent)]"
+        />
+      )}
 
-      {/* Fade the artwork's foot into the page so the half does not end on a
-          ruler-straight edge. The side seam is handled by the mask above. */}
-      <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[18%] bg-linear-to-t from-[#FAF8FF] to-transparent" />
+      <div
+        style={
+          variant === "bleed"
+            ? { WebkitMaskImage: sideFade, maskImage: sideFade }
+            : undefined
+        }
+        className={
+          variant === "bleed"
+            ? "absolute inset-0 overflow-hidden bg-[#F3EFFB]"
+            : "absolute inset-0 overflow-hidden rounded-[28px] bg-[#F3EFFB]"
+        }
+      >
+        {/* The scene is never mirrored: the characters are drawn in their own
+            composition, and flipping them in Arabic would put the whole group
+            back to front. Only the fade is direction-aware. */}
+        <Image
+          src="/explorer-kidz/landingPage/islandSide.png"
+          alt=""
+          fill
+          priority
+          sizes="(min-width: 1024px) 50vw, 100vw"
+          data-scene-ground
+          className="object-cover object-center will-change-transform"
+        />
+
+        {/* Fade the artwork's foot into the page so the half does not end on a
+            ruler-straight edge. The side seam is handled by the mask above. */}
+        <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[18%] bg-linear-to-t from-[#FAF8FF] to-transparent" />
+      </div>
     </div>
   );
 }

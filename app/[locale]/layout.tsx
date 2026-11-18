@@ -50,17 +50,9 @@ export default async function LocaleLayout({
       dir={locale === "ar" ? "rtl" : "ltr"}
       className={`${poppins.variable} ${cairo.variable}`}
     >
-      {/* Inline style wins over the unlayered body rule in globals.css, so the
-          locale font applies immediately without waiting for a CSS rebuild. */}
-      <body
-        className={locale === "ar" ? "font-cairo" : "font-poppins"}
-        style={{
-          fontFamily:
-            locale === "ar"
-              ? "var(--cairo), ui-sans-serif, system-ui, sans-serif"
-              : "var(--poppins), var(--cairo), ui-sans-serif, system-ui, sans-serif",
-        }}
-      >
+      {/* The locale font comes from `html[lang]` in globals.css — no inline
+          style, so the server and client trees always agree. */}
+      <body className={locale === "ar" ? "font-cairo" : "font-poppins"}>
         {children}
         <JsonLd data={buildStructuredData(locale)} />
       </body>

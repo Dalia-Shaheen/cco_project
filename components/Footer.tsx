@@ -60,9 +60,12 @@ export default function Footer({
   ];
 
   return (
+    /* The help section above is its own lavender card with the same radius, so
+       this gap is all that separates the two cards — keep it, or their corners
+       merge into one block. */
     <footer
       id="footer"
-      className="relative w-full scroll-mt-32 px-4 pb-6 sm:px-6 sm:pb-8"
+      className="relative w-full scroll-mt-32 px-4 pt-6 pb-6 sm:px-6 sm:pt-8 sm:pb-8"
     >
       <div className="relative mx-auto w-full max-w-[1392px] overflow-hidden rounded-[32px] bg-[#EEE8F8] px-6 py-10 sm:rounded-[40px] sm:px-10 sm:py-12 lg:px-14 lg:py-14">
         {/* A single soft puff so the card has depth without a gradient band. */}

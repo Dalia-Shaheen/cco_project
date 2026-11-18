@@ -14,6 +14,9 @@ export const explorerContent = {
     getStarted: "Get Started",
     howItWorks: "How It Works",
     islands: ["ADHD", "Autism", "Down syndrome"],
+    // The playful names the islands go by, in the same order as `islands`
+    // (and as `ISLAND_ART`): Distraction, Autism, Down syndrome.
+    islandNames: ["Flash Island", "Blue Island", "Happy Island"],
     stat: {
       value: "3",
       label: "learning islands",
@@ -84,6 +87,8 @@ export const explorerContent = {
     getStarted: "ابدأ الرحلة",
     howItWorks: "كيف تعمل",
     islands: ["فرط الحركة", "التوحد", "متلازمة داون"],
+    // أسماء الجزر اللطيفة، بنفس ترتيب `islands` و`ISLAND_ART`.
+    islandNames: ["جزيرة البرق", "الجزيرة الزرقاء", "الجزيرة السعيدة"],
     stat: {
       value: "٣",
       label: "جزر تعليمية",
