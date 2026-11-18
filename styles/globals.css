@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #30214f;
+  --color-card: #ffffff;
+  --shadow-card: 0 12px 32px -16px rgba(100, 65, 164, 0.35);
+}
+
+/* `inline` is required because the values reference next/font CSS variables.
+   Poppins is latin-only, so Cairo is the Arabic glyph fallback in every utility. */
+@theme inline {
+  --font-poppins: var(--poppins), var(--cairo), ui-sans-serif, system-ui, sans-serif;
+  --font-cairo: var(--cairo), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* GSAP animates the dropdown; this only keeps the pop origin at the trigger. */
+.menu-content {
+  transform-origin: var(--radix-dropdown-menu-content-transform-origin);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* No font-family here on purpose: unlayered CSS beats Tailwind's @layer utilities
+   in the cascade, which would override the locale-aware font class on <body>. */
+body {
+  color: var(--color-ink);
+  background-color: #faf8ff;
+}
+
+/* Arabic is Cairo-first everywhere — including elements that still carry the
+   Poppins utility class (e.g. the navbar) — so no text falls back to a system font. */
+html[lang="ar"] .font-poppins {
+  font-family: var(--cairo), ui-sans-serif, system-ui, sans-serif;
+}

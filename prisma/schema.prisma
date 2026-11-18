@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+enum Role {
+  ADMIN
+  PARENT
+}
+
+enum ChildPath {
+  NORMAL
+  SPECIAL_NEEDS
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(PARENT)
+  children  Child[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Child {
+  id             String           @id @default(cuid())
+  parentId       String
+  parent         User             @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  name           String
+  path           ChildPath
+  tokens         Int              @default(0)
+  energy         Int              @default(3)
+  createdAt      DateTime         @default(now())
+  islandProgress IslandProgress[]
+  playSessions   PlaySession[]
+}
+
+model IslandProgress {
+  id               String  @id @default(cuid())
+  childId          String
+  child            Child   @relation(fields: [childId], references: [id], onDelete: Cascade)
+  islandName       String
+  isVideoWatched   Boolean @default(false)
+  isStoryCompleted Boolean @default(false)
+  isGameUnlocked   Boolean @default(false)
+
+  @@unique([childId, islandName])
+}
+
+model PlaySession {
+  id        String    @id @default(cuid())
+  childId   String
+  child     Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+  startTime DateTime  @default(now())
+  endTime   DateTime?
+
+  @@index([childId, startTime])
+}
