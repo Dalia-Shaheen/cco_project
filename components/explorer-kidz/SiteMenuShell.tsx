@@ -48,6 +48,13 @@ export default function SiteMenuShell({
             note: "Three small steps, one big journey",
           },
           {
+            label: "Register",
+            href: `/${locale}/register`,
+            color: "#6441A4",
+            ink: "#FFFFFF",
+            note: "Start your adventure",
+          },
+          {
             label: "Help",
             href: `/${locale}/#help`,
             color: "#8F70C4",
@@ -76,6 +83,13 @@ export default function SiteMenuShell({
             color: "#7C5CBF",
             ink: "#FFFFFF",
             note: "ثلاث خطوات صغيرة",
+          },
+          {
+            label: "إنشاء حساب",
+            href: `/${locale}/register`,
+            color: "#6441A4",
+            ink: "#FFFFFF",
+            note: "ابدأ المغامرة لطفلك",
           },
           {
             label: "المساعدة",

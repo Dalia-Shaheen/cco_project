@@ -9,10 +9,7 @@ export type ShowcaseIsland = {
   width: number;
   height: number;
   tint: string;
-  /** The condition, for the screen-reader list. */
   name: string;
-  /** The playful island name shown under the artwork. */
-  nickname: string;
 };
 
 type IslandShowcaseProps = {
@@ -40,12 +37,37 @@ function Star({ speed, className }: { speed: number; className?: string }) {
 }
 
 /**
+ * The hand-drawn arrow from the hero. Here it sits on the boundary between two
+ * islands, so it slides into the middle of the stage exactly while you are
+ * between them and points at the island arriving next.
+ */
+function ArrowSquiggle({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      focusable="false"
+      data-arrow
+      viewBox="0 0 120 60"
+      className={className}
+    >
+      <path
+        d="M4 40 C 10 10, 40 10, 34 34 C 30 50, 12 40, 30 28 C 55 14, 85 24, 112 18 M100 8 L114 18 L102 30"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+/**
  * The three islands as one horizontal filmstrip. The section pins and the strip
  * slides sideways one stage width per island, so each island lands in the middle
  * in turn and its neighbour peeks in from the edge. Between every pair of
- * islands a row of stepping stones rides on the boundary: it is faint while an
- * island owns the stage and reaches full strength at the exact moment the stage
- * is half-way between two islands — the path you would hop across.
+ * islands the hero's hand-drawn arrow rides on the boundary: it is faint while
+ * an island owns the stage and reaches full strength at the exact moment the
+ * stage is half-way between two islands.
  */
 export default function IslandShowcase({
   islands,
@@ -66,7 +88,7 @@ export default function IslandShowcase({
           "[data-islands-track]",
         );
         const cells = gsap.utils.toArray<HTMLElement>("[data-island]", section);
-        const stones = gsap.utils.toArray<HTMLElement>("[data-stone]", section);
+        const arrows = gsap.utils.toArray<HTMLElement>("[data-arrow]", section);
         const shapes = gsap.utils.toArray<HTMLElement>("[data-speed]", section);
         if (!strip || cells.length < 2) return;
 
@@ -109,11 +131,11 @@ export default function IslandShowcase({
             art.style.transform = `scale(${scale.toFixed(4)})`;
           });
 
-          // Each stone row lives on the boundary after island `index`, so it is
+          // Each arrow lives on the boundary after island `index`, so it is
           // centred at pos = index + 0.5. Faint at the edges, full in the gap.
-          stones.forEach((stone, index) => {
+          arrows.forEach((arrow, index) => {
             const distance = Math.abs(pos - (index + 0.5));
-            stone.style.opacity = (
+            arrow.style.opacity = (
               0.15 +
               0.85 * Math.max(0, 1 - distance * 2)
             ).toFixed(3);
@@ -168,25 +190,23 @@ export default function IslandShowcase({
         });
 
         // Render from the *smoothed* playhead, not the raw scroll position, or
-        // the scale and the stones would snap instead of gliding.
+        // the scale and the arrows would snap instead of gliding.
         timeline.eventCallback("onUpdate", () =>
           render(timeline.progress()),
         );
 
         render(timeline.progress());
 
-        // The one bit of looping motion in the section: the stones drift up and
-        // settle back, each row offset from the other so they never bob in
-        // lockstep. Small and slow on purpose — this audience reads fast motion
-        // as noise.
-        stones.forEach((stone, index) => {
-          gsap.to(stone, {
-            y: -6,
-            duration: 2.4,
+        // The one bit of looping motion in the section: each arrow leans
+        // towards the island arriving next and drifts back. It is small and
+        // slow on purpose — this audience reads fast motion as noise.
+        arrows.forEach((arrow) => {
+          gsap.to(arrow, {
+            x: 16,
+            duration: 1.2,
             ease: "sine.inOut",
             yoyo: true,
             repeat: -1,
-            delay: index * 0.45,
           });
         });
 
@@ -241,7 +261,7 @@ export default function IslandShowcase({
         <div className="relative flex h-full flex-col motion-reduce:h-auto">
           <h2
             id="islands-title"
-            className={`relative z-10 mt-[max(9svh,7.5rem)] px-4 text-center text-[clamp(18px,2.2vw,26px)] font-extrabold text-[#30214F] sm:mt-[max(9svh,8.5rem)] ${
+            className={`relative z-10 mt-[9svh] px-4 text-center text-[clamp(18px,2.2vw,26px)] font-extrabold text-[#30214F] ${
               // Cairo breaks with negative tracking; Latin tightens nicely.
               rtl ? "" : "tracking-tight"
             }`}
@@ -280,52 +300,25 @@ export default function IslandShowcase({
                       width={island.width}
                       height={island.height}
                       sizes="(min-width: 640px) 680px, 92vw"
-                      // The cap keeps room for the name on short screens; on a
-                      // normal window it never bites.
-                      className="relative h-auto max-h-[calc(100%-4rem)] w-full max-w-[680px] object-contain drop-shadow-[0_30px_44px_rgba(48,33,79,0.24)]"
+                      className="relative h-auto max-h-full w-full max-w-[680px] object-contain drop-shadow-[0_30px_44px_rgba(48,33,79,0.24)]"
                     />
-
-                    {/* The island's name, on its own colour. It sits in the
-                        same column as the artwork so the two always travel
-                        together; `aria-hidden` because the list below already
-                        reads the name together with the condition. */}
-                    <p
-                      aria-hidden
-                      className={`relative mt-3 shrink-0 rounded-full px-4 py-1.5 text-[13px] font-extrabold whitespace-nowrap text-[#30214F] shadow-[0_10px_20px_-12px_rgba(48,33,79,0.45)] ring-1 ring-white/70 sm:mt-4 sm:px-5 sm:text-[15px] ${
-                        rtl ? "" : "tracking-tight"
-                      }`}
-                      style={{ backgroundColor: island.tint }}
-                    >
-                      {island.nickname}
-                    </p>
                   </div>
 
-                  {/* A row of stepping stones on the boundary with the next
-                      island — the path you would hop across. It travels with
-                      the strip, so it crosses the middle of the stage exactly
-                      when neither island owns it, and it drifts gently while it
-                      waits there. The wrapper straddles the boundary (half the
-                      path in each island's margin) and holds the RTL mirror;
-                      GSAP animates the image inside it, because it resets
-                      translate/scale on anything it touches. Reduced motion
-                      stacks the islands vertically, where a sideways path leads
-                      nowhere. */}
+                  {/* The hero's hand-drawn arrow on the boundary with the next
+                      island. It travels with the strip, so it crosses the
+                      middle of the stage exactly when neither island owns it,
+                      and it keeps nudging towards the island arriving next.
+                      The wrapper holds the position and the RTL mirror; GSAP
+                      animates the svg inside it (it resets translate/scale on
+                      anything it touches). Reduced motion stacks the islands
+                      vertically, where a sideways arrow points at nothing. */}
                   {index < islands.length - 1 && (
                     <span
-                      className={`pointer-events-none absolute end-0 top-1/2 -translate-y-1/2 motion-reduce:hidden ${
-                        rtl ? "-translate-x-1/2 -scale-x-100" : "translate-x-1/2"
+                      className={`pointer-events-none absolute end-0 top-1/2 -translate-y-1/2 text-[#F4A6A0] motion-reduce:hidden ${
+                        rtl ? "-scale-x-100" : ""
                       }`}
                     >
-                      <Image
-                        data-stone
-                        src="/explorer-kidz/home/stone.png"
-                        alt=""
-                        aria-hidden
-                        width={2112}
-                        height={1168}
-                        sizes="(min-width: 1024px) 352px, (min-width: 640px) 208px, 112px"
-                        className="block h-auto w-[112px] sm:w-[208px] lg:w-[352px]"
-                      />
+                      <ArrowSquiggle className="block w-12 sm:w-24 lg:w-32" />
                     </span>
                   )}
                 </div>
@@ -335,13 +328,10 @@ export default function IslandShowcase({
         </div>
       </div>
 
-      {/* Screen readers get each island once — nickname and condition together,
-          whatever the motion preference. */}
+      {/* Screen readers get the list once, whatever the motion preference. */}
       <ul className="sr-only">
         {islands.map((island) => (
-          <li key={island.src}>
-            {island.nickname} — {island.name}
-          </li>
+          <li key={island.src}>{island.name}</li>
         ))}
       </ul>
     </section>

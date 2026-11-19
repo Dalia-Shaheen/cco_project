@@ -22,64 +22,11 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Locale font, driven by the document's own `lang` — no inline style needed, so
-   nothing can drift between the server HTML and the hydrated tree. It lives in
-   `@layer base` on purpose: a `font-*` utility on the element still wins, which
-   is exactly what the `<body>` class does. */
-@layer base {
-  html[lang="ar"] body {
-    font-family: var(--cairo), ui-sans-serif, system-ui, sans-serif;
-  }
-
-  html[lang="en"] body {
-    font-family:
-      var(--poppins), var(--cairo), ui-sans-serif, system-ui, sans-serif;
-  }
-}
-
+/* No font-family here on purpose: unlayered CSS beats Tailwind's @layer utilities
+   in the cascade, which would override the locale-aware font class on <body>. */
 body {
   color: var(--color-ink);
   background-color: #faf8ff;
-}
-
-/* ── Scrollbar ────────────────────────────────────────────────────────────
-   Slim and in the site's own lavender. The track stays transparent on purpose:
-   the hero's artwork runs to the viewport edge, so a painted track would show
-   as a pale stripe over it. Chromium/Safari draw the bar from the ::-webkit-
-   pseudo-elements (rounded thumb, inset 2px so it reads thinner than its 8px
-   hit area); Firefox only understands the two standard properties, so those
-   sit behind a @supports that Firefox alone matches — otherwise Chrome 121+
-   would take the standard route and ignore the rounded webkit thumb. */
-html::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-html::-webkit-scrollbar-track,
-html::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-html::-webkit-scrollbar-thumb {
-  background-color: #8f70c4;
-  background-clip: content-box;
-  border: 2px solid transparent;
-  border-radius: 999px;
-}
-
-html::-webkit-scrollbar-thumb:hover {
-  background-color: #6441a4;
-}
-
-html::-webkit-scrollbar-thumb:active {
-  background-color: #563396;
-}
-
-@supports not selector(::-webkit-scrollbar) {
-  html {
-    scrollbar-width: thin;
-    scrollbar-color: #8f70c4 transparent;
-  }
 }
 
 /* Arabic is Cairo-first everywhere — including elements that still carry the
@@ -120,34 +67,10 @@ html[lang="ar"] .font-poppins {
   animation: lobly-twinkle 5s ease-in-out infinite;
 }
 
-/* The three dots on the loading screen: a slow wave, never a spinner. */
-@keyframes lobly-dot {
-  0%,
-  100% {
-    opacity: 0.25;
-    transform: translateY(0);
-  }
-  50% {
-    opacity: 1;
-    transform: translateY(-4px);
-  }
-}
-
-.lobly-dot {
-  animation: lobly-dot 1.4s ease-in-out infinite;
-}
-
-/* Honour the OS setting: no drifting mascot, no pulsing stars, no wave. */
+/* Honour the OS setting: no drifting mascot, no pulsing stars. */
 @media (prefers-reduced-motion: reduce) {
   .lobly-float,
-  .lobly-twinkle,
-  .lobly-dot {
+  .lobly-twinkle {
     animation: none !important;
   }
-
-  /* Static dots still need to read as "waiting", not as a faded mistake. */
-  .lobly-dot {
-    opacity: 0.55;
-  }
 }
-

@@ -9,7 +9,7 @@ import { useRollingMenu } from "@/components/mfa/RollingLettersMenu";
 import FlairHover from "@/components/ui/FlairHover";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, type MouseEvent } from "react";
 
 /**
  * The site's only navbar: identity + account action + language, plus the
@@ -30,17 +30,6 @@ export default function Navbar({ locale }: { locale: "en" | "ar" }) {
   const chromeFade = covered
     ? "pointer-events-none opacity-0"
     : "opacity-100";
-
-  // The bar is fixed, so it floats over content once the page scrolls. A soft
-  // shadow is what keeps it readable there; at the very top it stays flat, as
-  // designed.
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   // Toggle between English and Arabic URLs
   const toggleLocale = locale === "en" ? "ar" : "en";
@@ -65,12 +54,8 @@ export default function Navbar({ locale }: { locale: "en" | "ar" }) {
   return (
     <nav
       dir="ltr"
-      className={`fixed top-[12px] left-1/2 z-[110] flex h-[68px] w-[min(1392px,calc(100%-1.5rem))] -translate-x-1/2 flex-row items-center gap-2 rounded-[34px] px-2.5 transition-[background-color,box-shadow] duration-300 max-[359px]:gap-1 max-[359px]:px-2 sm:top-[16px] sm:h-[80px] sm:w-[min(1392px,calc(100%-2rem))] sm:gap-4 sm:rounded-[40px] sm:px-6 ${
-        covered
-          ? "pointer-events-none bg-transparent"
-          : scrolled
-            ? "bg-white shadow-[0_10px_30px_-18px_rgba(48,33,79,0.28)]"
-            : "bg-white"
+      className={`absolute top-[12px] left-1/2 z-[110] flex h-[68px] w-[min(1392px,calc(100%-1.5rem))] -translate-x-1/2 flex-row items-center gap-2 rounded-[34px] px-2.5 transition-colors duration-300 max-[359px]:gap-1 max-[359px]:px-2 sm:top-[16px] sm:h-[80px] sm:w-[min(1392px,calc(100%-2rem))] sm:gap-4 sm:rounded-[40px] sm:px-6 ${
+        covered ? "pointer-events-none bg-transparent" : "bg-white"
       }`}
     >
       {/* Brand: Lobly */}

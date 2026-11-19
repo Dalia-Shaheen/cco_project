@@ -20,15 +20,12 @@ const SUPPORT_EMAIL = "hello@lobly.app";
  */
 export default function HelpSection({ text }: HelpSectionProps) {
   return (
-    /* The footer below is a lavender card, not a full-bleed band, so this block
-       is one too — same max width, same inset and same corner radius — or the
-       two lavender areas read as one shape with a bite taken out of it. */
     <section
       id="help"
       aria-labelledby="help-title"
-      className="w-full scroll-mt-28 px-4 pt-6 sm:px-6 sm:pt-8"
+      className="w-full scroll-mt-28 bg-[#EEE8F8]"
     >
-      <div className="mx-auto w-full max-w-[1392px] rounded-[32px] bg-[#EEE8F8] px-6 pt-8 pb-6 sm:rounded-[40px] lg:pt-14 lg:pb-14">
+      <div className="mx-auto w-full max-w-[1392px] px-6 pt-8 pb-6 lg:pt-14 lg:pb-14">
         <ScrollReveal>
           <h2
             data-reveal
@@ -54,34 +51,14 @@ export default function HelpSection({ text }: HelpSectionProps) {
               data-reveal
               className="flex flex-col rounded-[28px] bg-white pt-2.5 pb-3 shadow-[0_6px_20px_rgba(100,65,164,0.045)] lg:pt-4 lg:pb-[25px]"
             >
-              {/* The mascot is a silent 5s clip on a white background, so it
-                  sits in the same fixed 340×282 stage (219×176 on phones) with
-                  `contain` — cropping would cut the head and feet off. No
-                  `controls`: it plays itself, muted (required for autoplay),
-                  inline on iOS, and loops. Reduced-motion visitors get the
-                  poster frame instead — a CSS swap, so nothing has to hydrate
-                  and the card keeps its height either way. */}
-              <video
-                src="/explorer-kidz/home/help-mascot.mp4"
-                poster="/explorer-kidz/home/help-mascot-poster.webp"
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                aria-hidden
-                width={360}
-                height={640}
-                className="mx-auto h-[176px] w-[219px] object-contain motion-reduce:hidden lg:mx-[26px] lg:h-[282px] lg:w-[340px]"
-              />
               <Image
-                src="/explorer-kidz/home/help-mascot-poster.webp"
+                src="/explorer-kidz/home/help-mascot.png"
                 alt=""
                 aria-hidden
-                width={360}
-                height={640}
-                loading="lazy"
-                className="mx-auto hidden h-[176px] w-[219px] object-contain motion-reduce:block lg:mx-[26px] lg:h-[282px] lg:w-[340px]"
+                width={680}
+                height={564}
+                sizes="(min-width: 1024px) 340px, 219px"
+                className="mx-auto h-[176px] w-[219px] object-cover lg:mx-[26px] lg:h-[282px] lg:w-[340px]"
               />
               <p className="mt-4 px-3 text-center text-[16px] leading-6 font-bold text-[#6441A4] lg:text-[21px] lg:leading-8">
                 {text.guide.title}
