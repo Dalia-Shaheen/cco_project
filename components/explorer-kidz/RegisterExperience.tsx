@@ -1,6 +1,5 @@
 "use client";
 
-import FlairHover from "@/components/ui/FlairHover";
 import type { Locale } from "@/lib/i18n";
 import Image from "next/image";
 import Link from "next/link";
@@ -89,20 +88,22 @@ export default function RegisterExperience({
 }: RegisterExperienceProps) {
   const isRtl = locale === "ar";
 
-  // Double Slider State:
-  // When isRightPanelActive is true -> Register form is visible on the right, overlay on the left
-  // When isRightPanelActive is false -> Login form is visible on the left, overlay on the right
-  const [isRightPanelActive, setIsRightPanelActive] = useState<boolean>(
-    initialMode === "register"
-  );
+  // Active view: "register" or "login"
+  const [activeMode, setActiveMode] = useState<"register" | "login">(initialMode);
 
-  // Register Form State
+  // Form states
+  const [showPassword, setShowPassword] = useState(false);
+  const [registerSubmitted, setRegisterSubmitted] = useState(false);
+  const [loginSubmitted, setLoginSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Register Form State (Preserving all original fields)
   const [registerForm, setRegisterForm] = useState({
     parentName: "",
     email: "",
     password: "",
     childName: "",
-    ageGroup: t.ageGroups[0] as string,
     childCondition: "normal" as "normal" | "special_needs",
     gender: "boy" as "boy" | "girl",
     disabilityType: isRtl ? "طيف التوحد" : "Autism Spectrum",
@@ -114,12 +115,6 @@ export default function RegisterExperience({
     password: "",
     rememberMe: false,
   });
-
-  // Form submission & feedback states
-  const [registerSubmitted, setRegisterSubmitted] = useState(false);
-  const [loginSubmitted, setLoginSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,7 +157,6 @@ export default function RegisterExperience({
     setErrorMessage(null);
 
     try {
-      // Simulate/trigger NextAuth credentials sign-in
       setLoginSubmitted(true);
     } catch {
       setLoginSubmitted(true);
@@ -172,986 +166,714 @@ export default function RegisterExperience({
   };
 
   return (
-    <div className="relative min-h-[90vh] w-full bg-[#FAF8FF] px-4 py-12 sm:py-16 flex items-center justify-center">
-      {/* ===================== INLINE DOUBLE SLIDER STYLES ===================== */}
-      <style jsx>{`
-        .double-slider-box {
-          background-color: #ffffff;
-          border-radius: 28px;
-          box-shadow: 0 20px 50px -15px rgba(100, 65, 164, 0.25), 0 10px 20px -8px rgba(48, 33, 79, 0.12);
-          position: relative;
-          overflow: hidden;
-          width: 960px;
-          max-width: 95vw;
-          min-height: 515px;
-          border: 1px solid rgba(255, 255, 255, 0.95);
-        }
+    <div
+      dir={isRtl ? "rtl" : "ltr"}
+      className="relative min-h-[calc(100vh-80px)] w-full overflow-hidden bg-[#2D184E] py-8 sm:py-12 lg:py-14 px-4 sm:px-6 flex items-center justify-center font-sans"
+    >
+      {/* ===================== FANTASY SKY BACKGROUND ATMOSPHERE ===================== */}
+      <div className="absolute inset-0 z-0 pointer-events-none select-none overflow-hidden">
+        {/* Base magical sky gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#251244] via-[#351E5C] to-[#200F3C]" />
 
-        .ds-form-container {
-          position: absolute;
-          top: 0;
-          height: 100%;
-          transition: all 0.6s cubic-bezier(0.77, 0, 0.175, 1);
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-        }
+        {/* User's Original Sky Islands Artwork (Natural backdrop across right side) */}
+        <div className="absolute inset-0 opacity-80 mix-blend-screen scale-105">
+          <Image
+            src="/explorer-kidz/register-bg.jpg"
+            alt="Sky Islands Atmosphere"
+            fill
+            priority
+            className="object-cover object-center lg:object-right"
+          />
+        </div>
 
-        .ds-sign-in-container {
-          left: 0;
-          width: 50%;
-          z-index: 2;
-          opacity: 1;
-        }
+        {/* Atmospheric ambient glows */}
+        <div className="absolute top-1/4 -right-10 w-96 h-96 rounded-full bg-[#8F70C4]/25 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-10 left-10 w-96 h-96 rounded-full bg-[#FDE047]/15 blur-3xl pointer-events-none" />
+      </div>
 
-        .double-slider-box.right-panel-active .ds-sign-in-container {
-          transform: translateX(100%);
-          opacity: 0;
-          pointer-events: none;
-        }
-
-        .double-slider-box:not(.right-panel-active) .ds-sign-in-container {
-          pointer-events: auto;
-        }
-
-        .ds-sign-up-container {
-          left: 0;
-          width: 50%;
-          opacity: 0;
-          z-index: 1;
-          pointer-events: none;
-        }
-
-        .double-slider-box.right-panel-active .ds-sign-up-container {
-          transform: translateX(100%);
-          opacity: 1;
-          z-index: 5;
-          animation: dsShow 0.6s cubic-bezier(0.77, 0, 0.175, 1);
-          pointer-events: auto;
-        }
-
-        @keyframes dsShow {
-          0%, 49.99% {
-            opacity: 0;
-            z-index: 1;
-          }
-          50%, 100% {
-            opacity: 1;
-            z-index: 5;
-          }
-        }
-
-        .ds-overlay-container {
-          position: absolute;
-          top: 0;
-          left: 50%;
-          width: 50%;
-          height: 100%;
-          overflow: hidden;
-          transition: transform 0.6s cubic-bezier(0.77, 0, 0.175, 1);
-          z-index: 100;
-        }
-
-        .double-slider-box.right-panel-active .ds-overlay-container {
-          transform: translateX(-100%);
-        }
-
-        .ds-overlay {
-          background-image: url('/explorer-kidz/register-bg.jpg');
-          background-repeat: no-repeat;
-          background-size: cover;
-          background-position: center;
-          color: #ffffff;
-          position: relative;
-          left: -100%;
-          height: 100%;
-          width: 200%;
-          transform: translateX(0);
-          transition: transform 0.6s cubic-bezier(0.77, 0, 0.175, 1);
-        }
-
-        .double-slider-box.right-panel-active .ds-overlay {
-          transform: translateX(50%);
-        }
-
-        .ds-overlay-shade {
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(135deg, rgba(48, 33, 79, 0.72) 0%, rgba(100, 65, 164, 0.55) 50%, rgba(48, 33, 79, 0.78) 100%);
-          pointer-events: none;
-        }
-
-        .ds-overlay-panel {
-          position: absolute;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-direction: column;
-          padding: 0 36px;
-          text-align: center;
-          top: 0;
-          height: 100%;
-          width: 50%;
-          transform: translateX(0);
-          transition: transform 0.6s cubic-bezier(0.77, 0, 0.175, 1);
-          z-index: 10;
-        }
-
-        .ds-overlay-left {
-          transform: translateX(-20%);
-        }
-
-        .double-slider-box.right-panel-active .ds-overlay-left {
-          transform: translateX(0);
-        }
-
-        .ds-overlay-right {
-          right: 0;
-          transform: translateX(0);
-        }
-
-        .double-slider-box.right-panel-active .ds-overlay-right {
-          transform: translateX(20%);
-        }
-
-        .ds-ghost-btn {
-          border-radius: 9999px;
-          border: 2px solid #ffffff;
-          background-color: rgba(255, 255, 255, 0.18);
-          color: #ffffff;
-          font-size: 13px;
-          font-weight: 800;
-          padding: 10px 32px;
-          letter-spacing: 0.05em;
-          transition: all 0.25s ease-in-out;
-          cursor: pointer;
-          backdrop-filter: blur(6px);
-          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-        }
-
-        .ds-ghost-btn:hover {
-          background-color: #ffffff;
-          color: #563396;
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-        }
-
-        .ds-ghost-btn:active {
-          transform: translateY(0);
-        }
-      `}</style>
-
-      {/* ===================== DESKTOP DOUBLE SLIDER (SCREEN >= 768px) ===================== */}
-      <div className="hidden md:flex justify-center w-full">
+      {/* ===================== DESKTOP 2-COLUMN VIEWPORT: CARD ON LEFT, HERO ON RIGHT ===================== */}
+      <div
+        dir="ltr"
+        className="relative z-10 w-full max-w-6xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-14"
+      >
+        
+        {/* ========================================================================= */}
+        {/* LEFT COLUMN: THE AUTH CARD (EXACT MOCKUP DESIGN RESTORED)                 */}
+        {/* ========================================================================= */}
         <div
-          dir="ltr"
-          className={`double-slider-box ${
-            isRightPanelActive ? "right-panel-active" : ""
-          }`}
-          id="doubleSliderContainer"
+          dir={isRtl ? "rtl" : "ltr"}
+          className="w-full max-w-[465px] mx-auto lg:mx-0 shrink-0"
         >
-          {/* Top Brand Stripe */}
-          <div className="absolute top-0 inset-x-0 h-1.5 w-full bg-gradient-to-r from-[#6441A4] via-[#8F70C4] to-[#F4A6A0] z-50" />
+          {/* Outer Card with Double White Border and Soft Drop Shadow */}
+          <div className="relative rounded-[38px] sm:rounded-[42px] border-[5px] sm:border-[6px] border-white/90 bg-white p-4 sm:p-5 shadow-[0_25px_60px_-15px_rgba(26,14,48,0.55),0_10px_25px_rgba(0,0,0,0.18)] transition-all duration-300">
+            
+            {/* FLOATING SPARKLE STAR BADGE (Overlapping top corner) */}
+            <div className={`absolute -top-3.5 ${isRtl ? "-left-3.5" : "-right-3.5"} z-20 size-12 sm:size-13 rounded-2xl bg-white/40 backdrop-blur-md border-2 border-white shadow-lg flex items-center justify-center rotate-12 transition-transform hover:rotate-45`}>
+              <svg viewBox="0 0 24 24" className="size-6 text-[#FDE047] fill-current drop-shadow-sm">
+                <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
+              </svg>
+            </div>
 
-          {/* ==================== FORM 1: SIGN UP (REGISTER) ==================== */}
-          <div className="ds-form-container ds-sign-up-container px-8 lg:px-10 py-5">
-            <div dir={isRtl ? "rtl" : "ltr"} className="w-full">
-              {registerSubmitted ? (
-                <div className="text-center py-5">
-                  <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-[#EEE8F8] text-[#6441A4] font-extrabold text-lg border border-[#6441A4]/20 shadow-sm">
-                    100%
-                  </div>
-                  <h2 className="mt-3 text-lg font-extrabold text-[#30214F]">
-                    {t.successTitle}
-                  </h2>
-                  <p className="mt-1 text-xs leading-relaxed text-[#625575]">
-                    {t.successDesc}
-                  </p>
-                  <div className="mt-4 rounded-2xl bg-[#FAF8FF] p-3.5 text-start border border-[#6441A4]/15">
-                    <p className="text-[11px] font-extrabold text-[#8F70C4] border-b border-[#EEE8F8] pb-1">
-                      {isRtl ? "ملخص بيانات الحساب" : "Account Summary"}
-                    </p>
-                    <div className="mt-2 space-y-1 text-xs text-[#30214F]">
-                      <p>
-                        <span className="font-bold">{t.parentName}:</span>{" "}
-                        {registerForm.parentName || (isRtl ? "ولي الأمر" : "Parent")}
+            {/* TOP HEADER POD (Curved Purple Capsule Card) */}
+            <div className="relative overflow-hidden rounded-[26px] bg-gradient-to-b from-[#6441A4] via-[#5C399A] to-[#4F2D8B] p-5 text-center text-white shadow-inner">
+              
+              {/* Tiny decorative corner sparkles */}
+              <div className="absolute top-2.5 left-4 opacity-50">
+                <svg viewBox="0 0 24 24" className="size-3 text-[#FDE047] fill-current">
+                  <path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10L12 2Z" />
+                </svg>
+              </div>
+              <div className="absolute bottom-2.5 right-4 opacity-40">
+                <svg viewBox="0 0 24 24" className="size-3 text-[#FDE047] fill-current">
+                  <path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10L12 2Z" />
+                </svg>
+              </div>
+
+              {/* Yellow Pill Badge */}
+              <div className="inline-block rounded-full bg-[#FDE047] px-4 py-1 text-[11px] font-black uppercase tracking-wider text-[#4C1D95] shadow-sm mb-2">
+                {activeMode === "login"
+                  ? isRtl
+                    ? "منطقة الأهالي"
+                    : "PARENT AREA"
+                  : isRtl
+                  ? "حساب جديد"
+                  : "NEW ACCOUNT"}
+              </div>
+
+              {/* Title */}
+              <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight drop-shadow-sm">
+                {activeMode === "login"
+                  ? isRtl
+                    ? "تسجيل الدخول"
+                    : "Sign In"
+                  : isRtl
+                  ? "إنشاء حساب مستكشف"
+                  : "Create Explorer Account"}
+              </h1>
+
+              {/* Subtitle */}
+              <p className="mt-1 text-xs text-white/90 font-medium leading-relaxed">
+                {activeMode === "login"
+                  ? isRtl
+                    ? "سجّل الدخول لمتابعة تقدم أبطالك الصغار"
+                    : "Sign in to track your heroes' progress"
+                  : isRtl
+                  ? "سجّل بياناتك وابدأ رحلة الألعاب والتعلم الساحرة"
+                  : "Join today and start the magical learning journey"}
+              </p>
+            </div>
+
+            {/* ==================== FORM BODY ==================== */}
+            <div className="mt-4 px-1">
+              
+              {/* LOGIN VIEW (Exact Match to User's Mockup) */}
+              {activeMode === "login" && (
+                <div>
+                  {loginSubmitted ? (
+                    <div className="text-center py-8">
+                      <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-[#EEE8F8] text-[#6441A4] font-black text-xl border-2 border-[#6441A4]/30 shadow-md">
+                        100%
+                      </div>
+                      <h2 className="mt-4 text-xl font-black text-[#30214F]">
+                        {isRtl ? "أهلاً بك مجدداً!" : "Welcome back!"}
+                      </h2>
+                      <p className="mt-2 text-xs leading-relaxed text-[#625575]">
+                        {isRtl
+                          ? "تم تسجيل الدخول بنجاح! جاري تحويلك..."
+                          : "Signed in successfully. Redirecting..."}
                       </p>
-                      <p>
-                        <span className="font-bold">{t.email}:</span>{" "}
-                        {registerForm.email}
-                      </p>
-                      <p>
-                        <span className="font-bold">{t.childName}:</span>{" "}
-                        {registerForm.childName}
-                      </p>
-                      <p>
-                        <span className="font-bold">{isRtl ? "حالة المستكشف:" : "Profile:"}</span>{" "}
-                        {registerForm.childCondition === "normal"
-                          ? isRtl
-                            ? `طبيعي (${registerForm.gender === "boy" ? "ولد" : "بنت"})`
-                            : `Typical (${registerForm.gender === "boy" ? "Boy" : "Girl"})`
-                          : isRtl
-                          ? `ذوي احتياجات خاصة (${registerForm.disabilityType})`
-                          : `Special Needs (${registerForm.disabilityType})`}
-                      </p>
+                      <div className="mt-6">
+                        <Link
+                          href={`/${locale}`}
+                          className="inline-block rounded-2xl bg-[#6441A4] px-8 py-3 text-xs font-black text-white shadow-[0_4px_0_#432675] hover:bg-[#583796] transition-all"
+                        >
+                          {isRtl ? "الصفحة الرئيسية" : "Back to Home"}
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-5 flex justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsRightPanelActive(false)}
-                      className="rounded-xl bg-[#6441A4] px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#563396] cursor-pointer"
-                    >
-                      {t.goToLogin}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={handleRegisterSubmit} className="space-y-2">
-                  <div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8F70C4]">
-                      {isRtl ? "حساب جديد" : "NEW ACCOUNT"}
-                    </span>
-                    <h2 className="text-lg font-extrabold text-[#30214F]">
-                      {isRtl ? "إنشاء حساب مستكشف" : "Create Account"}
-                    </h2>
-                    <p className="text-[10.5px] text-[#625575]">
-                      {isRtl
-                        ? "ابدأ رحلة التعلم والمغامرة لطفلك"
-                        : "Start your child's learning journey"}
-                    </p>
-                  </div>
+                  ) : (
+                    <form onSubmit={handleLoginSubmit} className="space-y-3.5">
+                      {/* Email Field */}
+                      <div>
+                        <label
+                          htmlFor="login-email"
+                          className="block text-xs font-bold text-[#30214F] mb-1 text-start"
+                        >
+                          {isRtl ? "البريد الإلكتروني" : "Email address"}
+                        </label>
+                        <div className="relative flex items-center">
+                          <input
+                            id="login-email"
+                            type="email"
+                            required
+                            placeholder="daliashaheen776@gmail.com"
+                            value={loginForm.email}
+                            onChange={(e) =>
+                              setLoginForm({ ...loginForm, email: e.target.value })
+                            }
+                            className={`h-11 sm:h-12 w-full rounded-2xl border-2 border-[#E9D5FF] bg-white text-xs font-medium text-[#30214F] placeholder:text-[#A799BD] focus:border-[#6441A4] focus:ring-4 focus:ring-[#6441A4]/15 outline-none transition-all ${
+                              isRtl ? "pr-4 pl-11" : "pl-4 pr-11"
+                            }`}
+                          />
+                          <div className={`absolute ${isRtl ? "left-3.5" : "right-3.5"} text-[#8F70C4] pointer-events-none`}>
+                            <svg viewBox="0 0 24 24" className="size-5 fill-none stroke-current stroke-2">
+                              <rect width="20" height="16" x="2" y="4" rx="3" />
+                              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
 
-                  {/* Row 1: Parent Name & Email */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label
-                        htmlFor="ds-parentName"
-                        className="block text-[10px] font-bold text-[#30214F]"
-                      >
-                        {t.parentName}
-                      </label>
-                      <input
-                        id="ds-parentName"
-                        type="text"
-                        required
-                        placeholder={t.parentNamePlaceholder}
-                        value={registerForm.parentName}
-                        onChange={(e) =>
-                          setRegisterForm({
-                            ...registerForm,
-                            parentName: e.target.value,
-                          })
-                        }
-                        className="mt-0.5 h-8.5 w-full rounded-xl border border-[#6441A4]/20 bg-[#FAF8FF] px-2.5 text-xs text-[#30214F] outline-none transition focus:border-[#6441A4] focus:bg-white focus:ring-2 focus:ring-[#6441A4]/20"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="ds-reg-email"
-                        className="block text-[10px] font-bold text-[#30214F]"
-                      >
-                        {t.email}
-                      </label>
-                      <input
-                        id="ds-reg-email"
-                        type="email"
-                        required
-                        placeholder={t.emailPlaceholder}
-                        value={registerForm.email}
-                        onChange={(e) =>
-                          setRegisterForm({
-                            ...registerForm,
-                            email: e.target.value,
-                          })
-                        }
-                        className="mt-0.5 h-8.5 w-full rounded-xl border border-[#6441A4]/20 bg-[#FAF8FF] px-2.5 text-xs text-[#30214F] outline-none transition focus:border-[#6441A4] focus:bg-white focus:ring-2 focus:ring-[#6441A4]/20"
-                      />
-                    </div>
-                  </div>
+                      {/* Password Field */}
+                      <div>
+                        <label
+                          htmlFor="login-password"
+                          className="block text-xs font-bold text-[#30214F] mb-1 text-start"
+                        >
+                          {isRtl ? "كلمة المرور" : "Password"}
+                        </label>
+                        <div className="relative flex items-center">
+                          <input
+                            id="login-password"
+                            type={showPassword ? "text" : "password"}
+                            required
+                            placeholder="••••••••••••"
+                            value={loginForm.password}
+                            onChange={(e) =>
+                              setLoginForm({
+                                ...loginForm,
+                                password: e.target.value,
+                              })
+                            }
+                            className={`h-11 sm:h-12 w-full rounded-2xl border-2 border-[#E9D5FF] bg-white text-xs font-medium text-[#30214F] placeholder:text-[#A799BD] focus:border-[#6441A4] focus:ring-4 focus:ring-[#6441A4]/15 outline-none transition-all ${
+                              isRtl ? "pr-4 pl-16" : "pl-4 pr-16"
+                            }`}
+                          />
+                          <div className={`absolute ${isRtl ? "left-3" : "right-3"} flex items-center gap-1.5`}>
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="text-[#8F70C4] hover:text-[#6441A4] p-1 cursor-pointer transition-colors"
+                              title={showPassword ? "Hide password" : "Show password"}
+                            >
+                              {showPassword ? (
+                                <svg viewBox="0 0 24 24" className="size-4.5 fill-none stroke-current stroke-2">
+                                  <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                                  <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                                  <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                                  <line x1="2" x2="22" y1="2" y2="22" />
+                                </svg>
+                              ) : (
+                                <svg viewBox="0 0 24 24" className="size-4.5 fill-none stroke-current stroke-2">
+                                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                  <circle cx="12" cy="12" r="3" />
+                                </svg>
+                              )}
+                            </button>
+                            <span className="text-[#8F70C4]">
+                              <svg viewBox="0 0 24 24" className="size-4.5 fill-none stroke-current stroke-2">
+                                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                              </svg>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
 
-                  {/* Row 2: Password & Child Name */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label
-                        htmlFor="ds-reg-password"
-                        className="block text-[10px] font-bold text-[#30214F]"
-                      >
-                        {t.password}
-                      </label>
-                      <input
-                        id="ds-reg-password"
-                        type="password"
-                        required
-                        placeholder={t.passwordPlaceholder}
-                        value={registerForm.password}
-                        onChange={(e) =>
-                          setRegisterForm({
-                            ...registerForm,
-                            password: e.target.value,
-                          })
-                        }
-                        className="mt-0.5 h-8.5 w-full rounded-xl border border-[#6441A4]/20 bg-[#FAF8FF] px-2.5 text-xs text-[#30214F] outline-none transition focus:border-[#6441A4] focus:bg-white focus:ring-2 focus:ring-[#6441A4]/20"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="ds-childName"
-                        className="block text-[10px] font-bold text-[#30214F]"
-                      >
-                        {t.childName}
-                      </label>
-                      <input
-                        id="ds-childName"
-                        type="text"
-                        required
-                        placeholder={t.childNamePlaceholder}
-                        value={registerForm.childName}
-                        onChange={(e) =>
-                          setRegisterForm({
-                            ...registerForm,
-                            childName: e.target.value,
-                          })
-                        }
-                        className="mt-0.5 h-8.5 w-full rounded-xl border border-[#6441A4]/20 bg-[#FAF8FF] px-2.5 text-xs text-[#30214F] outline-none transition focus:border-[#6441A4] focus:bg-white focus:ring-2 focus:ring-[#6441A4]/20"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Child Condition (Normal vs Special Needs) */}
-                  <div>
-                    <label className="block text-[10px] font-bold text-[#30214F]">
-                      {isRtl ? "حالة الطفل" : "Child Condition"}
-                    </label>
-                    <div className="mt-0.5 grid grid-cols-2 gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setRegisterForm({
-                            ...registerForm,
-                            childCondition: "normal",
-                          })
-                        }
-                        className={`h-7.5 rounded-lg border text-[10px] font-bold transition-all cursor-pointer ${
-                          registerForm.childCondition === "normal"
-                            ? "border-[#6441A4] bg-[#6441A4] text-white shadow-sm"
-                            : "border-[#6441A4]/20 bg-[#FAF8FF] text-[#30214F] hover:border-[#6441A4]/50"
-                        }`}
-                      >
-                        {isRtl ? "طبيعي (نورمال)" : "Normal / Typical"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setRegisterForm({
-                            ...registerForm,
-                            childCondition: "special_needs",
-                          })
-                        }
-                        className={`h-7.5 rounded-lg border text-[10px] font-bold transition-all cursor-pointer ${
-                          registerForm.childCondition === "special_needs"
-                            ? "border-[#6441A4] bg-[#6441A4] text-white shadow-sm"
-                            : "border-[#6441A4]/20 bg-[#FAF8FF] text-[#30214F] hover:border-[#6441A4]/50"
-                        }`}
-                      >
-                        {isRtl ? "ذوي احتياجات خاصة" : "Special Needs"}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Row 5: Conditional Branching */}
-                  {registerForm.childCondition === "normal" ? (
-                    <div>
-                      <label className="block text-[10px] font-bold text-[#30214F]">
-                        {isRtl ? "الجنس" : "Gender"}
-                      </label>
-                      <div className="mt-0.5 grid grid-cols-2 gap-1.5">
+                      {/* Remember Me & Forgot Password */}
+                      <div className="flex items-center justify-between text-[11px] pt-0.5">
+                        <label className="flex items-center gap-1.5 cursor-pointer text-[#625575] font-medium">
+                          <input
+                            type="checkbox"
+                            checked={loginForm.rememberMe}
+                            onChange={(e) =>
+                              setLoginForm({
+                                ...loginForm,
+                                rememberMe: e.target.checked,
+                              })
+                            }
+                            className="size-4 rounded-md border-2 border-[#C9BDEB] text-[#6441A4] focus:ring-[#6441A4] cursor-pointer"
+                          />
+                          <span>{isRtl ? "تذكرني" : "Remember me"}</span>
+                        </label>
                         <button
                           type="button"
-                          onClick={() =>
-                            setRegisterForm({ ...registerForm, gender: "boy" })
-                          }
-                          className={`h-7.5 rounded-lg border text-[10px] font-bold transition-all cursor-pointer ${
-                            registerForm.gender === "boy"
-                              ? "border-[#6441A4] bg-[#6441A4] text-white shadow-sm"
-                              : "border-[#6441A4]/20 bg-[#FAF8FF] text-[#30214F] hover:border-[#6441A4]/50"
-                          }`}
+                          className="font-bold text-[#6441A4] hover:underline cursor-pointer"
                         >
-                          {isRtl ? "ولد" : "Boy"}
+                          {isRtl ? "نسيت كلمة المرور؟" : "Forgot password?"}
                         </button>
+                      </div>
+
+                      {/* 3D Tactile Submit Button */}
+                      <div className="pt-2">
+                        <button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="group relative h-12 w-full cursor-pointer rounded-2xl bg-[#6441A4] hover:bg-[#583796] text-white font-black text-sm shadow-[0_5px_0_#432675,0_12px_24px_rgba(67,38,117,0.35)] active:translate-y-1 active:shadow-[0_1px_0_#432675] transition-all flex items-center justify-center gap-2.5 disabled:opacity-60"
+                        >
+                          <span>{isRtl ? "تسجيل الدخول" : "Sign In"}</span>
+                          <svg
+                            viewBox="0 0 24 24"
+                            className={`size-4.5 fill-none stroke-current stroke-3 transition-transform group-hover:${
+                              isRtl ? "-translate-x-1" : "translate-x-1"
+                            }`}
+                          >
+                            <path
+                              d={
+                                isRtl
+                                  ? "M19 12H5M12 19l-7-7 7-7"
+                                  : "M5 12h14M12 5l7 7-7 7"
+                              }
+                            />
+                          </svg>
+                        </button>
+                      </div>
+
+                      {/* Platform Reassurance Badge */}
+                      <div className="mt-4 rounded-2xl bg-[#F5F0FF] py-2.5 px-3 text-center border border-[#E9D5FF] flex items-center justify-center gap-1.5">
+                        <svg viewBox="0 0 24 24" className="size-3.5 text-[#6441A4] fill-none stroke-current stroke-2">
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+                          <path d="m9 12 2 2 4-4" />
+                        </svg>
+                        <p className="text-[10.5px] font-bold text-[#6441A4]">
+                          {isRtl
+                            ? "منصة تعليمية آمنة 100% وخالية تماماً من الإعلانات"
+                            : "100% Safe educational platform with zero ads"}
+                        </p>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              )}
+
+              {/* REGISTER VIEW (Preserving ALL functional content & inputs) */}
+              {activeMode === "register" && (
+                <div>
+                  {registerSubmitted ? (
+                    <div className="text-center py-6">
+                      <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-[#EEE8F8] text-[#6441A4] font-black text-xl border-2 border-[#6441A4]/30 shadow-md">
+                        100%
+                      </div>
+                      <h2 className="mt-3 text-xl font-black text-[#30214F]">
+                        {t.successTitle}
+                      </h2>
+                      <p className="mt-1 text-xs leading-relaxed text-[#625575]">
+                        {t.successDesc}
+                      </p>
+                      
+                      <div className="mt-4 rounded-2xl bg-[#F5F0FF] p-3.5 text-start border border-[#E9D5FF]">
+                        <p className="text-[11px] font-black text-[#6441A4] border-b border-[#E9D5FF] pb-1.5 mb-2">
+                          {isRtl ? "ملخص بيانات الحساب" : "Account Summary"}
+                        </p>
+                        <div className="space-y-1 text-xs text-[#30214F] font-semibold">
+                          <p>
+                            <span className="font-bold">{t.parentName}:</span>{" "}
+                            {registerForm.parentName || (isRtl ? "ولي الأمر" : "Parent")}
+                          </p>
+                          <p>
+                            <span className="font-bold">{t.childName}:</span>{" "}
+                            {registerForm.childName}
+                          </p>
+                          <p>
+                            <span className="font-bold">{t.email}:</span>{" "}
+                            {registerForm.email}
+                          </p>
+                          <p>
+                            <span className="font-bold">{isRtl ? "الحالة:" : "Profile:"}</span>{" "}
+                            {registerForm.childCondition === "normal"
+                              ? isRtl
+                                ? `طبيعي (${registerForm.gender === "boy" ? "ولد" : "بنت"})`
+                                : `Typical (${registerForm.gender === "boy" ? "Boy" : "Girl"})`
+                              : isRtl
+                              ? `ذوي احتياجات خاصة (${registerForm.disabilityType})`
+                              : `Special Needs (${registerForm.disabilityType})`}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-5">
                         <button
                           type="button"
-                          onClick={() =>
-                            setRegisterForm({ ...registerForm, gender: "girl" })
-                          }
-                          className={`h-7.5 rounded-lg border text-[10px] font-bold transition-all cursor-pointer ${
-                            registerForm.gender === "girl"
-                              ? "border-[#6441A4] bg-[#6441A4] text-white shadow-sm"
-                              : "border-[#6441A4]/20 bg-[#FAF8FF] text-[#30214F] hover:border-[#6441A4]/50"
-                          }`}
+                          onClick={() => setActiveMode("login")}
+                          className="rounded-2xl bg-[#6441A4] px-8 py-3 text-xs font-black text-white shadow-[0_4px_0_#432675] hover:bg-[#583796] cursor-pointer transition-all"
                         >
-                          {isRtl ? "بنت" : "Girl"}
+                          {t.goToLogin}
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div>
-                      <label
-                        htmlFor="ds-disability"
-                        className="block text-[10px] font-bold text-[#30214F]"
-                      >
-                        {isRtl ? "نوع الإعاقة أو الاحتياج" : "Disability / Need Type"}
-                      </label>
-                      <select
-                        id="ds-disability"
-                        value={registerForm.disabilityType}
-                        onChange={(e) =>
-                          setRegisterForm({
-                            ...registerForm,
-                            disabilityType: e.target.value,
-                          })
-                        }
-                        className="mt-0.5 h-8 w-full rounded-xl border border-[#6441A4]/20 bg-[#FAF8FF] px-2 text-xs text-[#30214F] outline-none transition focus:border-[#6441A4] focus:bg-white focus:ring-2 focus:ring-[#6441A4]/20 cursor-pointer"
-                      >
-                        {(isRtl ? disabilityOptionsAr : disabilityOptionsEn).map(
-                          (opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          )
-                        )}
-                      </select>
-                    </div>
+                    <form onSubmit={handleRegisterSubmit} className="space-y-2.5">
+                      
+                      {/* Row 1: Parent Name & Child Name */}
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div>
+                          <label
+                            htmlFor="cart-parentName"
+                            className="block text-[11px] font-bold text-[#30214F] mb-1 text-start"
+                          >
+                            {t.parentName}
+                          </label>
+                          <input
+                            id="cart-parentName"
+                            type="text"
+                            required
+                            placeholder={t.parentNamePlaceholder}
+                            value={registerForm.parentName}
+                            onChange={(e) =>
+                              setRegisterForm({
+                                ...registerForm,
+                                parentName: e.target.value,
+                              })
+                            }
+                            className="h-10 w-full rounded-2xl border-2 border-[#E9D5FF] bg-white px-3 text-xs font-medium text-[#30214F] placeholder:text-[#A799BD] focus:border-[#6441A4] focus:ring-4 focus:ring-[#6441A4]/15 outline-none transition-all"
+                          />
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="cart-childName"
+                            className="block text-[11px] font-bold text-[#30214F] mb-1 text-start"
+                          >
+                            {t.childName}
+                          </label>
+                          <input
+                            id="cart-childName"
+                            type="text"
+                            required
+                            placeholder={t.childNamePlaceholder}
+                            value={registerForm.childName}
+                            onChange={(e) =>
+                              setRegisterForm({
+                                ...registerForm,
+                                childName: e.target.value,
+                              })
+                            }
+                            className="h-10 w-full rounded-2xl border-2 border-[#E9D5FF] bg-white px-3 text-xs font-medium text-[#30214F] placeholder:text-[#A799BD] focus:border-[#6441A4] focus:ring-4 focus:ring-[#6441A4]/15 outline-none transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 2: Email */}
+                      <div>
+                        <label
+                          htmlFor="cart-email"
+                          className="block text-[11px] font-bold text-[#30214F] mb-1 text-start"
+                        >
+                          {t.email}
+                        </label>
+                        <div className="relative flex items-center">
+                          <input
+                            id="cart-email"
+                            type="email"
+                            required
+                            placeholder={t.emailPlaceholder}
+                            value={registerForm.email}
+                            onChange={(e) =>
+                              setRegisterForm({
+                                ...registerForm,
+                                email: e.target.value,
+                              })
+                            }
+                            className={`h-10 w-full rounded-2xl border-2 border-[#E9D5FF] bg-white text-xs font-medium text-[#30214F] placeholder:text-[#A799BD] focus:border-[#6441A4] focus:ring-4 focus:ring-[#6441A4]/15 outline-none transition-all ${
+                              isRtl ? "pr-3 pl-10" : "pl-3 pr-10"
+                            }`}
+                          />
+                          <div className={`absolute ${isRtl ? "left-3" : "right-3"} text-[#8F70C4] pointer-events-none`}>
+                            <svg viewBox="0 0 24 24" className="size-4 fill-none stroke-current stroke-2">
+                              <rect width="20" height="16" x="2" y="4" rx="3" />
+                              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Row 3: Password */}
+                      <div>
+                        <label
+                          htmlFor="cart-password"
+                          className="block text-[11px] font-bold text-[#30214F] mb-1 text-start"
+                        >
+                          {t.password}
+                        </label>
+                        <div className="relative flex items-center">
+                          <input
+                            id="cart-password"
+                            type={showPassword ? "text" : "password"}
+                            required
+                            placeholder={t.passwordPlaceholder}
+                            value={registerForm.password}
+                            onChange={(e) =>
+                              setRegisterForm({
+                                ...registerForm,
+                                password: e.target.value,
+                              })
+                            }
+                            className={`h-10 w-full rounded-2xl border-2 border-[#E9D5FF] bg-white text-xs font-medium text-[#30214F] placeholder:text-[#A799BD] focus:border-[#6441A4] focus:ring-4 focus:ring-[#6441A4]/15 outline-none transition-all ${
+                              isRtl ? "pr-3 pl-14" : "pl-3 pr-14"
+                            }`}
+                          />
+                          <div className={`absolute ${isRtl ? "left-2.5" : "right-2.5"} flex items-center gap-1.5`}>
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="text-[#8F70C4] hover:text-[#6441A4] p-0.5 cursor-pointer transition-colors"
+                            >
+                              {showPassword ? (
+                                <svg viewBox="0 0 24 24" className="size-4 fill-none stroke-current stroke-2">
+                                  <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                                  <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                                  <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                                  <line x1="2" x2="22" y1="2" y2="22" />
+                                </svg>
+                              ) : (
+                                <svg viewBox="0 0 24 24" className="size-4 fill-none stroke-current stroke-2">
+                                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                  <circle cx="12" cy="12" r="3" />
+                                </svg>
+                              )}
+                            </button>
+                            <span className="text-[#8F70C4]">
+                              <svg viewBox="0 0 24 24" className="size-4 fill-none stroke-current stroke-2">
+                                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                              </svg>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Row 4: Child Condition (Pill Buttons) */}
+                      <div className="pt-0.5">
+                        <label className="block text-[11px] font-bold text-[#30214F] mb-1 text-start">
+                          {isRtl ? "حالة الطفل" : "Child Condition"}
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRegisterForm({
+                                ...registerForm,
+                                childCondition: "normal",
+                              })
+                            }
+                            className={`h-9.5 rounded-xl text-[11px] font-black transition-all cursor-pointer flex items-center justify-center ${
+                              registerForm.childCondition === "normal"
+                                ? "bg-[#6441A4] text-white shadow-[0_3px_0_#432675]"
+                                : "bg-[#F5F0FF] text-[#6441A4] border-2 border-[#E9D5FF] hover:bg-[#EBE2FC]"
+                            }`}
+                          >
+                            <span>{isRtl ? "طبيعي (نورمال)" : "Typical"}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRegisterForm({
+                                ...registerForm,
+                                childCondition: "special_needs",
+                              })
+                            }
+                            className={`h-9.5 rounded-xl text-[11px] font-black transition-all cursor-pointer flex items-center justify-center ${
+                              registerForm.childCondition === "special_needs"
+                                ? "bg-[#6441A4] text-white shadow-[0_3px_0_#432675]"
+                                : "bg-[#F5F0FF] text-[#6441A4] border-2 border-[#E9D5FF] hover:bg-[#EBE2FC]"
+                            }`}
+                          >
+                            <span>{isRtl ? "ذوي احتياجات خاصة" : "Special Needs"}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Row 5: Conditional Fields */}
+                      {registerForm.childCondition === "normal" ? (
+                        <div>
+                          <label className="block text-[11px] font-bold text-[#30214F] mb-1 text-start">
+                            {isRtl ? "الجنس" : "Gender"}
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setRegisterForm({ ...registerForm, gender: "boy" })
+                              }
+                              className={`h-9 rounded-xl text-[11px] font-black transition-all cursor-pointer flex items-center justify-center ${
+                                registerForm.gender === "boy"
+                                  ? "bg-[#6441A4] text-white shadow-[0_3px_0_#432675]"
+                                  : "bg-[#F5F0FF] text-[#6441A4] border-2 border-[#E9D5FF] hover:bg-[#EBE2FC]"
+                              }`}
+                            >
+                              <span>{isRtl ? "ولد" : "Boy"}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setRegisterForm({ ...registerForm, gender: "girl" })
+                              }
+                              className={`h-9 rounded-xl text-[11px] font-black transition-all cursor-pointer flex items-center justify-center ${
+                                registerForm.gender === "girl"
+                                  ? "bg-[#6441A4] text-white shadow-[0_3px_0_#432675]"
+                                  : "bg-[#F5F0FF] text-[#6441A4] border-2 border-[#E9D5FF] hover:bg-[#EBE2FC]"
+                              }`}
+                            >
+                              <span>{isRtl ? "بنت" : "Girl"}</span>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <label
+                            htmlFor="cart-disability"
+                            className="block text-[11px] font-bold text-[#30214F] mb-1 text-start"
+                          >
+                            {isRtl ? "نوع الإعاقة أو الاحتياج" : "Disability Type"}
+                          </label>
+                          <select
+                            id="cart-disability"
+                            value={registerForm.disabilityType}
+                            onChange={(e) =>
+                              setRegisterForm({
+                                ...registerForm,
+                                disabilityType: e.target.value,
+                              })
+                            }
+                            className="h-10 w-full rounded-2xl border-2 border-[#E9D5FF] bg-white px-3 text-xs font-bold text-[#30214F] outline-none transition focus:border-[#6441A4] focus:ring-4 focus:ring-[#6441A4]/15 cursor-pointer"
+                          >
+                            {(isRtl ? disabilityOptionsAr : disabilityOptionsEn).map(
+                              (opt) => (
+                                <option key={opt} value={opt}>
+                                  {opt}
+                                </option>
+                              )
+                            )}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Error Alert Message */}
+                      {errorMessage && (
+                        <div className="rounded-xl border border-[#F4A6A0] bg-[#FFF5F5] p-2 text-center text-[10.5px] font-bold text-[#D32F2F]">
+                          {errorMessage}
+                        </div>
+                      )}
+
+                      {/* 3D Tactile Submit Button */}
+                      <div className="pt-2">
+                        <button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="group relative h-12 w-full cursor-pointer rounded-2xl bg-[#6441A4] hover:bg-[#583796] text-white font-black text-sm shadow-[0_5px_0_#432675,0_12px_24px_rgba(67,38,117,0.35)] active:translate-y-1 active:shadow-[0_1px_0_#432675] transition-all flex items-center justify-center gap-2.5 disabled:opacity-60"
+                        >
+                          <span>
+                            {isSubmitting
+                              ? isRtl
+                                ? "جاري إنشاء الحساب..."
+                                : "Creating Account..."
+                              : isRtl
+                              ? "إنشاء الحساب وبدء المغامرة"
+                              : "Create Account & Start"}
+                          </span>
+                          <svg
+                            viewBox="0 0 24 24"
+                            className={`size-4.5 fill-none stroke-current stroke-3 transition-transform group-hover:${
+                              isRtl ? "-translate-x-1" : "translate-x-1"
+                            }`}
+                          >
+                            <path
+                              d={
+                                isRtl
+                                  ? "M19 12H5M12 19l-7-7 7-7"
+                                  : "M5 12h14M12 5l7 7-7 7"
+                              }
+                            />
+                          </svg>
+                        </button>
+                      </div>
+
+                      {/* Reassurance Badge */}
+                      <div className="mt-3 rounded-2xl bg-[#F5F0FF] py-2 px-3 text-center border border-[#E9D5FF] flex items-center justify-center gap-1.5">
+                        <svg viewBox="0 0 24 24" className="size-3.5 text-[#6441A4] fill-none stroke-current stroke-2">
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+                          <path d="m9 12 2 2 4-4" />
+                        </svg>
+                        <p className="text-[10px] font-bold text-[#6441A4]">
+                          {isRtl
+                            ? "منصة تعليمية آمنة 100% وخالية تماماً من الإعلانات"
+                            : "100% Safe educational platform with zero ads"}
+                        </p>
+                      </div>
+                    </form>
                   )}
-
-                  {/* Error Alert Message */}
-                  {errorMessage && (
-                    <div className="rounded-xl border border-[#F4A6A0] bg-[#FFF5F5] p-2 text-center text-[10px] font-bold text-[#D32F2F]">
-                      {errorMessage}
-                    </div>
-                  )}
-
-                  {/* Submit Button */}
-                  <div className="pt-1.5">
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="group relative h-9.5 w-full cursor-pointer rounded-xl bg-[#6441A4] text-xs font-bold text-white shadow-md outline-offset-2 transition-all hover:bg-[#563396] focus-visible:outline-2 focus-visible:outline-[#6441A4] disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      <FlairHover color="#FFFFFF" />
-                      <span className="relative transition-colors duration-75 motion-safe:group-hover:text-[#563396] motion-safe:group-hover:delay-100">
-                        {isSubmitting
-                          ? isRtl
-                            ? "جاري إنشاء الحساب..."
-                            : "Creating Account..."
-                          : t.submit}
-                      </span>
-                    </button>
-                  </div>
-                </form>
+                </div>
               )}
-            </div>
-          </div>
-
-          {/* ==================== FORM 2: SIGN IN (LOGIN) ==================== */}
-          <div className="ds-form-container ds-sign-in-container px-8 lg:px-10 py-6">
-            <div dir={isRtl ? "rtl" : "ltr"} className="w-full">
-              {loginSubmitted ? (
-                <div className="text-center py-8">
-                  <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-[#EEE8F8] text-[#6441A4] font-extrabold text-xl border border-[#6441A4]/20 shadow-sm">
-                    100%
-                  </div>
-                  <h2 className="mt-4 text-xl font-extrabold text-[#30214F]">
-                    {isRtl ? "أهلاً بك مجدداً!" : "Welcome back!"}
-                  </h2>
-                  <p className="mt-2 text-xs leading-relaxed text-[#625575]">
-                    {isRtl
-                      ? "تم تسجيل الدخول بنجاح. جاري نقلك إلى لوحة المتابعة..."
-                      : "Successfully signed in. Redirecting to your dashboard..."}
-                  </p>
-                  <div className="mt-6 flex justify-center gap-2">
-                    <Link
-                      href={`/${locale}`}
-                      className="rounded-xl bg-[#6441A4] px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#563396]"
-                    >
-                      {isRtl ? "الصفحة الرئيسية" : "Home"}
-                    </Link>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={handleLoginSubmit} className="space-y-3.5">
-                  <div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8F70C4]">
-                      {isRtl ? "منطقة الأهالي" : "PARENT AREA"}
-                    </span>
-                    <h2 className="mt-0.5 text-2xl font-extrabold text-[#30214F]">
-                      {isRtl ? "تسجيل الدخول" : "Sign In"}
-                    </h2>
-                    <p className="text-xs text-[#625575]">
-                      {isRtl
-                        ? "سجّل الدخول لمتابعة تقدم أبطالك الصغار"
-                        : "Sign in to see your children and their progress"}
-                    </p>
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label
-                      htmlFor="ds-log-email"
-                      className="block text-xs font-bold text-[#30214F]"
-                    >
-                      {t.email}
-                    </label>
-                    <input
-                      id="ds-log-email"
-                      type="email"
-                      required
-                      placeholder={t.emailPlaceholder}
-                      value={loginForm.email}
-                      onChange={(e) =>
-                        setLoginForm({ ...loginForm, email: e.target.value })
-                      }
-                      className="mt-1 h-10 w-full rounded-xl border border-[#6441A4]/20 bg-[#FAF8FF] px-3.5 text-xs text-[#30214F] outline-none transition focus:border-[#6441A4] focus:bg-white focus:ring-2 focus:ring-[#6441A4]/20"
-                    />
-                  </div>
-
-                  {/* Password */}
-                  <div>
-                    <label
-                      htmlFor="ds-log-password"
-                      className="block text-xs font-bold text-[#30214F]"
-                    >
-                      {t.password}
-                    </label>
-                    <input
-                      id="ds-log-password"
-                      type="password"
-                      required
-                      placeholder={t.passwordPlaceholder}
-                      value={loginForm.password}
-                      onChange={(e) =>
-                        setLoginForm({
-                          ...loginForm,
-                          password: e.target.value,
-                        })
-                      }
-                      className="mt-1 h-10 w-full rounded-xl border border-[#6441A4]/20 bg-[#FAF8FF] px-3.5 text-xs text-[#30214F] outline-none transition focus:border-[#6441A4] focus:bg-white focus:ring-2 focus:ring-[#6441A4]/20"
-                    />
-                  </div>
-
-                  {/* Remember Me & Forgot Password */}
-                  <div className="flex items-center justify-between text-[11px]">
-                    <label className="flex items-center gap-1.5 cursor-pointer text-[#625575]">
-                      <input
-                        type="checkbox"
-                        checked={loginForm.rememberMe}
-                        onChange={(e) =>
-                          setLoginForm({
-                            ...loginForm,
-                            rememberMe: e.target.checked,
-                          })
-                        }
-                        className="rounded border-[#6441A4]/30 text-[#6441A4] focus:ring-[#6441A4]"
-                      />
-                      <span>{isRtl ? "تذكرني" : "Remember me"}</span>
-                    </label>
-                    <button
-                      type="button"
-                      className="font-bold text-[#6441A4] hover:underline cursor-pointer"
-                    >
-                      {isRtl ? "نسيت كلمة المرور؟" : "Forgot password?"}
-                    </button>
-                  </div>
-
-                  {/* Submit Button */}
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      className="group relative h-11 w-full cursor-pointer rounded-xl bg-[#6441A4] text-xs font-bold text-white shadow-md outline-offset-2 transition-all hover:bg-[#563396] focus-visible:outline-2 focus-visible:outline-[#6441A4]"
-                    >
-                      <FlairHover color="#FFFFFF" />
-                      <span className="relative transition-colors duration-75 motion-safe:group-hover:text-[#563396] motion-safe:group-hover:delay-100">
-                        {isRtl ? "تسجيل الدخول" : "Sign In"}
-                      </span>
-                    </button>
-                  </div>
-
-                  {/* Platform Safety Note */}
-                  <div className="rounded-xl bg-[#EEE8F8]/50 p-2.5 text-center">
-                    <p className="text-[11px] font-medium text-[#563396]">
-                      {isRtl
-                        ? "منصة تعليمية آمنة 100% وخالية تماماً من الإعلانات"
-                        : "100% safe educational platform with zero ads"}
-                    </p>
-                  </div>
-                </form>
-              )}
-            </div>
-          </div>
-
-          {/* ==================== THE SLIDING OVERLAY CONTAINER ==================== */}
-          <div className="ds-overlay-container">
-            <div className="ds-overlay">
-              <div className="ds-overlay-shade" />
-
-              {/* OVERLAY PANEL LEFT (Visible when Register is active -> invites to Log In) */}
-              <div className="ds-overlay-panel ds-overlay-left">
-                <div dir={isRtl ? "rtl" : "ltr"} className="max-w-[280px]">
-                  <span className="inline-block rounded-full bg-white/20 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-white backdrop-blur-sm border border-white/30">
-                    {isRtl ? "منصة المستكشف" : "EXPLORER PLATFORM"}
-                  </span>
-                  <h3 className="mt-3 text-2xl font-extrabold text-white leading-tight">
-                    {isRtl ? "أهلاً بك مجدداً!" : "Welcome Back!"}
-                  </h3>
-                  <p className="mt-2 text-xs leading-relaxed text-white/90">
-                    {isRtl
-                      ? "إذا كان لديك حساب مسجل بالفعل، سجل دخولك الآن لمتابعة مسار طفلك التعليمي الممتع"
-                      : "If you already have an account, sign in here to follow your little explorer's journey"}
-                  </p>
-                  <div className="mt-6">
-                    <button
-                      type="button"
-                      onClick={() => setIsRightPanelActive(false)}
-                      className="ds-ghost-btn"
-                    >
-                      {isRtl ? "تسجيل الدخول" : "Sign In"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* OVERLAY PANEL RIGHT (Visible when Login is active -> invites to Sign Up) */}
-              <div className="ds-overlay-panel ds-overlay-right">
-                <div dir={isRtl ? "rtl" : "ltr"} className="max-w-[280px]">
-                  <span className="inline-block rounded-full bg-white/20 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-white backdrop-blur-sm border border-white/30">
-                    {isRtl ? "مغامرة جديدة" : "NEW ADVENTURE"}
-                  </span>
-                  <h3 className="mt-3 text-2xl font-extrabold text-white leading-tight">
-                    {isRtl ? "مستكشف جديد؟" : "Hello, Explorer!"}
-                  </h3>
-                  <p className="mt-2 text-xs leading-relaxed text-white/90">
-                    {isRtl
-                      ? "انضم إلينا اليوم وابدأ رحلة تعليمية تفاعلية شيقة بين جزر المعرفة الساحرة"
-                      : "Enter your details and start a joyful learning journey across the cloud islands"}
-                  </p>
-                  <div className="mt-6">
-                    <button
-                      type="button"
-                      onClick={() => setIsRightPanelActive(true)}
-                      className="ds-ghost-btn"
-                    >
-                      {isRtl ? "إنشاء حساب" : "Sign Up"}
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ===================== MOBILE AUTH CARD (SCREEN < 768px) ===================== */}
-      <div className="block md:hidden w-full max-w-md mx-auto">
-        <div className="overflow-hidden rounded-[24px] border border-white/90 bg-white shadow-xl">
-          {/* Mobile Image Banner */}
-          <div className="relative h-40 w-full overflow-hidden select-none">
-            <Image
-              src="/explorer-kidz/register-bg.jpg"
-              alt="Explorer Sky Islands"
-              fill
-              priority
-              className="object-cover object-center"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#30214F]/85 via-[#30214F]/40 to-transparent flex flex-col justify-end p-4">
-              <span className="inline-block w-fit rounded-full bg-white/90 px-2.5 py-0.5 text-[9px] font-extrabold uppercase text-[#6441A4]">
-                {t.heroBadge}
-              </span>
-              <h2 className="mt-1 text-lg font-extrabold text-white">
-                {isRightPanelActive
-                  ? isRtl
-                    ? "إنشاء حساب مستكشف جديد"
-                    : "Create Explorer Account"
-                  : isRtl
-                  ? "تسجيل دخول الأهالي"
-                  : "Parent Login"}
-              </h2>
+        {/* ========================================================================= */}
+        {/* RIGHT COLUMN: SKY ISLANDS HERO HEADLINE & FLOATING ACTION CAPSULE         */}
+        {/* ========================================================================= */}
+        <div
+          dir={isRtl ? "rtl" : "ltr"}
+          className="w-full max-w-xl flex flex-col items-center lg:items-start text-center lg:text-start justify-between min-h-[460px] py-2"
+        >
+          {/* Top Floating Badge & Headlines */}
+          <div className="w-full">
+            <div className="inline-block rounded-full bg-white/20 backdrop-blur-md px-4 py-1.5 text-xs font-black uppercase text-white tracking-widest border border-white/30 shadow-lg mb-3">
+              {activeMode === "login"
+                ? isRtl
+                  ? "مغامرة جديدة"
+                  : "NEW ADVENTURE"
+                : isRtl
+                ? "أهلاً بعودتك"
+                : "WELCOME BACK"}
             </div>
+
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.55)]">
+              {activeMode === "login"
+                ? isRtl
+                  ? "مستكشف جديد؟"
+                  : "New Explorer?"
+                : isRtl
+                ? "أهلاً بك مجدداً!"
+                : "Welcome Back!"}
+            </h2>
+
+            <p className="mt-3 text-sm sm:text-base text-white/95 font-medium leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)] max-w-lg">
+              {activeMode === "login"
+                ? isRtl
+                  ? "انضم إلينا اليوم وابدأ رحلة تعليمية مليئة بالألعاب الشيقة والكنوز المعرفية الساحرة"
+                  : "Join us today and embark on a joyful journey filled with thrilling games and magical knowledge"
+                : isRtl
+                ? "سجّل دخولك لمتابعة تقدم أبطالك الصغار واستكشاف الجزر المعرفية الساحرة"
+                : "Sign in to check your little heroes' progress and explore the magical cloud islands"}
+            </p>
           </div>
 
-          {/* Mobile Segmented Switcher */}
-          <div className="p-4 pb-0">
-            <div className="grid grid-cols-2 gap-1 rounded-xl bg-[#EEE8F8] p-1">
-              <button
-                type="button"
-                onClick={() => setIsRightPanelActive(false)}
-                className={`rounded-lg py-2 text-xs font-extrabold transition-all cursor-pointer ${
-                  !isRightPanelActive
-                    ? "bg-white text-[#6441A4] shadow-sm"
-                    : "text-[#625575] hover:text-[#30214F]"
-                }`}
-              >
-                {isRtl ? "تسجيل الدخول" : "Sign In"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsRightPanelActive(true)}
-                className={`rounded-lg py-2 text-xs font-extrabold transition-all cursor-pointer ${
-                  isRightPanelActive
-                    ? "bg-white text-[#6441A4] shadow-sm"
-                    : "text-[#625575] hover:text-[#30214F]"
-                }`}
-              >
-                {isRtl ? "إنشاء حساب" : "Sign Up"}
-              </button>
-            </div>
-          </div>
+          {/* Bottom Floating Interactive Action Capsule */}
+          <div className="w-full max-w-md rounded-full bg-white/95 backdrop-blur-md p-2.5 px-6 shadow-[0_20px_45px_rgba(20,8,42,0.45)] border-2 border-white flex items-center justify-between gap-4 transition-transform hover:scale-[1.02]">
+            <p className="text-xs sm:text-sm font-black text-[#30214F]">
+              {activeMode === "login"
+                ? isRtl
+                  ? "مغامرتك تبدأ من هنا!"
+                  : "Your adventure starts here!"
+                : isRtl
+                ? "لديك حساب مسجل بالفعل؟"
+                : "Already have an account?"}
+            </p>
 
-          {/* Mobile Form Body */}
-          <div className="p-5" dir={isRtl ? "rtl" : "ltr"}>
-            {isRightPanelActive ? (
-              /* Mobile Register */
-              <form onSubmit={handleRegisterSubmit} className="space-y-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-[#30214F]">
-                    {t.parentName}
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder={t.parentNamePlaceholder}
-                    value={registerForm.parentName}
-                    onChange={(e) =>
-                      setRegisterForm({
-                        ...registerForm,
-                        parentName: e.target.value,
-                      })
-                    }
-                    className="mt-1 h-10 w-full rounded-xl border border-[#6441A4]/20 bg-[#FAF8FF] px-3.5 text-xs text-[#30214F] outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-[#30214F]">
-                    {t.email}
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    placeholder={t.emailPlaceholder}
-                    value={registerForm.email}
-                    onChange={(e) =>
-                      setRegisterForm({
-                        ...registerForm,
-                        email: e.target.value,
-                      })
-                    }
-                    className="mt-1 h-10 w-full rounded-xl border border-[#6441A4]/20 bg-[#FAF8FF] px-3.5 text-xs text-[#30214F] outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-[#30214F]">
-                    {t.password}
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    placeholder={t.passwordPlaceholder}
-                    value={registerForm.password}
-                    onChange={(e) =>
-                      setRegisterForm({
-                        ...registerForm,
-                        password: e.target.value,
-                      })
-                    }
-                    className="mt-1 h-10 w-full rounded-xl border border-[#6441A4]/20 bg-[#FAF8FF] px-3.5 text-xs text-[#30214F] outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-[#30214F]">
-                    {t.childName}
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder={t.childNamePlaceholder}
-                    value={registerForm.childName}
-                    onChange={(e) =>
-                      setRegisterForm({
-                        ...registerForm,
-                        childName: e.target.value,
-                      })
-                    }
-                    className="mt-1 h-10 w-full rounded-xl border border-[#6441A4]/20 bg-[#FAF8FF] px-3.5 text-xs text-[#30214F] outline-none"
-                  />
-                </div>
-
-                {/* Mobile Child Condition */}
-                <div>
-                  <label className="block text-[11px] font-bold text-[#30214F]">
-                    {isRtl ? "حالة الطفل" : "Child Condition"}
-                  </label>
-                  <div className="mt-1 grid grid-cols-2 gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setRegisterForm({
-                          ...registerForm,
-                          childCondition: "normal",
-                        })
-                      }
-                      className={`h-8 rounded-xl border text-[10px] font-bold transition-all ${
-                        registerForm.childCondition === "normal"
-                          ? "border-[#6441A4] bg-[#6441A4] text-white"
-                          : "border-[#6441A4]/20 bg-[#FAF8FF] text-[#30214F]"
-                      }`}
-                    >
-                      {isRtl ? "طبيعي (نورمال)" : "Normal / Typical"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setRegisterForm({
-                          ...registerForm,
-                          childCondition: "special_needs",
-                        })
-                      }
-                      className={`h-8 rounded-xl border text-[10px] font-bold transition-all ${
-                        registerForm.childCondition === "special_needs"
-                          ? "border-[#6441A4] bg-[#6441A4] text-white"
-                          : "border-[#6441A4]/20 bg-[#FAF8FF] text-[#30214F]"
-                      }`}
-                    >
-                      {isRtl ? "ذوي احتياجات خاصة" : "Special Needs"}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Mobile Conditional Field */}
-                {registerForm.childCondition === "normal" ? (
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#30214F]">
-                      {isRtl ? "الجنس" : "Gender"}
-                    </label>
-                    <div className="mt-1 grid grid-cols-2 gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setRegisterForm({ ...registerForm, gender: "boy" })
-                        }
-                        className={`h-8 rounded-xl border text-[10px] font-bold transition-all ${
-                          registerForm.gender === "boy"
-                            ? "border-[#6441A4] bg-[#6441A4] text-white"
-                            : "border-[#6441A4]/20 bg-[#FAF8FF] text-[#30214F]"
-                        }`}
-                      >
-                        {isRtl ? "ولد" : "Boy"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setRegisterForm({ ...registerForm, gender: "girl" })
-                        }
-                        className={`h-8 rounded-xl border text-[10px] font-bold transition-all ${
-                          registerForm.gender === "girl"
-                            ? "border-[#6441A4] bg-[#6441A4] text-white"
-                            : "border-[#6441A4]/20 bg-[#FAF8FF] text-[#30214F]"
-                        }`}
-                      >
-                        {isRtl ? "بنت" : "Girl"}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <label
-                      htmlFor="ds-mob-disability"
-                      className="block text-[11px] font-bold text-[#30214F]"
-                    >
-                      {isRtl ? "نوع الإعاقة أو الاحتياج" : "Disability / Need Type"}
-                    </label>
-                    <select
-                      id="ds-mob-disability"
-                      value={registerForm.disabilityType}
-                      onChange={(e) =>
-                        setRegisterForm({
-                          ...registerForm,
-                          disabilityType: e.target.value,
-                        })
-                      }
-                      className="mt-1 h-9 w-full rounded-xl border border-[#6441A4]/20 bg-[#FAF8FF] px-3 text-xs text-[#30214F] outline-none"
-                    >
-                      {(isRtl ? disabilityOptionsAr : disabilityOptionsEn).map(
-                        (opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        )
-                      )}
-                    </select>
-                  </div>
-                )}
-
-                {errorMessage && (
-                  <div className="rounded-xl border border-[#F4A6A0] bg-[#FFF5F5] p-2 text-center text-[10px] font-bold text-[#D32F2F]">
-                    {errorMessage}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="mt-2 h-11 w-full rounded-xl bg-[#6441A4] text-xs font-bold text-white shadow-md hover:bg-[#563396] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  {isSubmitting
-                    ? isRtl
-                      ? "جاري إنشاء الحساب..."
-                      : "Creating Account..."
-                    : t.submit}
-                </button>
-              </form>
-            ) : (
-              /* Mobile Login */
-              <form onSubmit={handleLoginSubmit} className="space-y-3.5">
-                <div>
-                  <label className="block text-xs font-bold text-[#30214F]">
-                    {t.email}
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    placeholder={t.emailPlaceholder}
-                    value={loginForm.email}
-                    onChange={(e) =>
-                      setLoginForm({ ...loginForm, email: e.target.value })
-                    }
-                    className="mt-1 h-10 w-full rounded-xl border border-[#6441A4]/20 bg-[#FAF8FF] px-3.5 text-xs text-[#30214F] outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#30214F]">
-                    {t.password}
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    placeholder={t.passwordPlaceholder}
-                    value={loginForm.password}
-                    onChange={(e) =>
-                      setLoginForm({
-                        ...loginForm,
-                        password: e.target.value,
-                      })
-                    }
-                    className="mt-1 h-10 w-full rounded-xl border border-[#6441A4]/20 bg-[#FAF8FF] px-3.5 text-xs text-[#30214F] outline-none"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="mt-2 h-11 w-full rounded-xl bg-[#6441A4] text-xs font-bold text-white shadow-md hover:bg-[#563396]"
-                >
-                  {isRtl ? "تسجيل الدخول" : "Sign In"}
-                </button>
-              </form>
-            )}
+            <button
+              type="button"
+              onClick={() =>
+                setActiveMode(activeMode === "login" ? "register" : "login")
+              }
+              className="h-10 px-6 rounded-full bg-[#6441A4] hover:bg-[#583796] text-white font-black text-xs shadow-[0_3px_0_#432675] active:translate-y-0.5 transition-all cursor-pointer shrink-0"
+            >
+              {activeMode === "login"
+                ? isRtl
+                  ? "إنشاء حساب"
+                  : "Register"
+                : isRtl
+                ? "تسجيل الدخول"
+                : "Sign In"}
+            </button>
           </div>
         </div>
       </div>
